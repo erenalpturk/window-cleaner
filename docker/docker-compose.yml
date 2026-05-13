@@ -1,0 +1,32 @@
+services:
+  ros2-dev:
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/arm64
+      args:
+        USERNAME: dev
+        USER_UID: "501"
+        USER_GID: "20"
+    image: window-cleaner:dev
+    container_name: window-cleaner-dev
+    volumes:
+      - ..:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      DISPLAY: host.docker.internal:0
+      QT_X11_NO_MITSHM: "1"
+      # Apple Silicon XQuartz cannot render OGRE2 via GLX — force Mesa
+      # llvmpipe software rasterizer for RViz2 and any GUI tools.
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      QT_QUICK_BACKEND: software
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8765:8765"
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
