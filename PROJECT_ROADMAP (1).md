@@ -6,8 +6,8 @@ target_machine: MacBook Air M4 (Apple Silicon, ARM64)
 stack: ROS2 Humble + Gazebo Fortress + Nav2 + OpenCV (Python)
 dev_environment: Docker Desktop + Foxglove Studio (Apple Silicon — XQuartz GLX broken)
 duration: 4 weeks (28 days)
-status: phase_1_complete
-current_phase: 1
+status: phase_2_in_progress
+current_phase: 2
 last_updated: 2026-05-13
 communication_language: Turkish
 documentation_language: English
@@ -344,21 +344,21 @@ window-cleaner-robot/
 
 ## Day 8-9: Camera Node + cv_bridge
 
-- [ ] **2.1** Create `src/window_cleaner_perception/` package (`ament_python`):
+- [x] **2.1** Create `src/window_cleaner_perception/` package (`ament_python`):
   ```bash
   ros2 pkg create --build-type ament_python window_cleaner_perception \
     --dependencies rclpy sensor_msgs cv_bridge geometry_msgs std_msgs
   ```
 
-- [ ] **2.2** Create `window_cleaner_perception/window_cleaner_perception/camera_node.py`:
+- [x] **2.2** Create `window_cleaner_perception/window_cleaner_perception/camera_node.py`:
   - Subscribe to `Image` topic (`/robot/camera/image_raw`)
   - Convert to OpenCV `numpy.ndarray` via `cv_bridge.CvBridge`
   - Publish processed image on `/perception/debug_image`
   - Log frame rate metrics every 100 frames
 
-- [ ] **2.3** Add `camera_node = window_cleaner_perception.camera_node:main` to `setup.py` entry_points.
+- [x] **2.3** Add `camera_node = window_cleaner_perception.camera_node:main` to `setup.py` entry_points.
 
-- [ ] **2.4** Build + test:
+- [x] **2.4** Build + test:
   ```bash
   cd /workspace
   colcon build --packages-select window_cleaner_perception
@@ -370,7 +370,7 @@ window-cleaner-robot/
 
 ## Day 10-11: Glass Frame Detection
 
-- [ ] **2.5** Create `window_cleaner_perception/window_cleaner_perception/frame_detector.py`:
+- [x] **2.5** Create `window_cleaner_perception/window_cleaner_perception/frame_detector.py`:
   - Algorithm pipeline:
     1. BGR → Gray
     2. Gaussian blur (kernel 5×5)
@@ -383,13 +383,13 @@ window-cleaner-robot/
     - `/perception/debug_frame` (Image — with edges drawn)
   - **Parameterization**: load all thresholds from a `.yaml` config file (must be tunable in the field)
 
-- [ ] **2.6** Create `config/perception_params.yaml` — Canny thresholds, Hough min length, etc.
+- [x] **2.6** Create `config/perception_params.yaml` — Canny thresholds, Hough min length, etc.
 
 - [ ] **2.7** Visual verification in RViz: open `rviz2` → add Image display → subscribe to `/perception/debug_frame` → verify edges are correctly detected.
 
 ## Day 12-13: Dirty Region Segmentation
 
-- [ ] **2.8** Create `window_cleaner_perception/window_cleaner_perception/dirt_segmenter.py`:
+- [x] **2.8** Create `window_cleaner_perception/window_cleaner_perception/dirt_segmenter.py`:
   - Algorithm:
     1. BGR → HSV
     2. HSV masking: low V (brightness) + low S (saturation) → dirty pixels
@@ -401,7 +401,7 @@ window-cleaner-robot/
     - `/perception/dirty_regions` — custom message type OR `geometry_msgs/PoseArray` (simpler alternative)
     - `/perception/debug_dirt` (Image — dirty regions outlined in green)
 
-- [ ] **2.9** **Decision required**: Define a custom message type or use standard messages? AI must ASK the user. Recommendation: start with `geometry_msgs/PoseArray` (region centers) + `std_msgs/Float32MultiArray` (areas), refactor later if needed.
+- [x] **2.9** **Decision required**: Define a custom message type or use standard messages? AI must ASK the user. Recommendation: start with `geometry_msgs/PoseArray` (region centers) + `std_msgs/Float32MultiArray` (areas), refactor later if needed. **Decision: standard messages chosen.**
 
 - [ ] **2.10** Test: verify `dirty_regions` topic publishes the correct number of points:
   ```bash
@@ -418,7 +418,7 @@ window-cleaner-robot/
 
 - [ ] **2.12** RViz lidar visualization: add LaserScan display, subscribe to `/robot/scan`, verify the surrounding frame appears as lidar points around the robot.
 
-- [ ] **2.13** Create `window_cleaner_perception/launch/perception.launch.py` — launch all perception nodes:
+- [x] **2.13** Create `window_cleaner_perception/launch/perception.launch.py` — launch all perception nodes:
   - `camera_node`
   - `frame_detector`
   - `dirt_segmenter`

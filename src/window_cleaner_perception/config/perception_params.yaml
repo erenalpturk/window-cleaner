@@ -1,0 +1,26 @@
+frame_detector:
+  ros__parameters:
+    # Canny edge detection thresholds
+    canny_low: 50
+    canny_high: 150
+    # Probabilistic Hough transform
+    hough_min_length: 50
+    hough_max_gap: 20
+    # Gaussian blur kernel size (must be odd)
+    blur_kernel: 5
+
+dirt_segmenter:
+  ros__parameters:
+    # HSV range for brown/dark dirt regions
+    # H: 0-30 covers brown/dark-yellow hues
+    hsv_h_low: 0
+    hsv_h_high: 30
+    hsv_s_low: 20
+    hsv_s_high: 150
+    # V: low brightness = dark/dirty
+    hsv_v_low: 20
+    hsv_v_high: 120
+    # Morphological closing kernel size
+    morph_kernel: 7
+    # Minimum contour area in pixels to count as a region
+    min_area_px: 50

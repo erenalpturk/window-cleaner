@@ -131,6 +131,31 @@ From another terminal, if the launch terminal is gone:
 docker stop wc-sim
 ```
 
+## Running the perception layer (Phase 2+)
+
+Start the sim first, then in a second terminal:
+
+```bash
+docker exec -it wc-sim bash
+source install/setup.bash
+ros2 launch window_cleaner_perception perception.launch.py
+```
+
+Useful perception debug topics (add as Image panels in Foxglove):
+
+| Topic | Content |
+|---|---|
+| `/perception/debug_image` | Raw camera feed with frame counter overlay |
+| `/perception/debug_frame` | Edge detection + detected glass boundary (blue rect) |
+| `/perception/debug_dirt` | Dirty regions outlined in green |
+| `/perception/glass_boundary` | `PolygonStamped` — glass corners in image coords |
+| `/perception/dirty_regions` | `PoseArray` — dirty region centers |
+| `/perception/dirty_areas` | `Float32MultiArray` — pixel areas per region |
+
+Tune detection thresholds without rebuilding by editing
+`src/window_cleaner_perception/config/perception_params.yaml` and restarting
+`perception.launch.py`.
+
 ## Topic cheat-sheet
 
 | Topic | Type | Hz | Direction |
@@ -144,6 +169,12 @@ docker stop wc-sim
 | `/robot/camera/image_raw` | `sensor_msgs/Image` | ~22 | GZ → ROS |
 | `/robot/camera/camera_info` | `sensor_msgs/CameraInfo` | ~22 | GZ → ROS |
 | `/robot_description` | `std_msgs/String` | latched | ROS only |
+| `/perception/debug_image` | `sensor_msgs/Image` | ~22 | ROS only |
+| `/perception/debug_frame` | `sensor_msgs/Image` | ~22 | ROS only |
+| `/perception/debug_dirt` | `sensor_msgs/Image` | ~22 | ROS only |
+| `/perception/glass_boundary` | `geometry_msgs/PolygonStamped` | ~22 | ROS only |
+| `/perception/dirty_regions` | `geometry_msgs/PoseArray` | ~22 | ROS only |
+| `/perception/dirty_areas` | `std_msgs/Float32MultiArray` | ~22 | ROS only |
 
 ## Troubleshooting
 
