@@ -103,11 +103,12 @@ xhost +localhost
 1. **One task at a time, in order.** Don't skip ahead or batch-implement multiple roadmap tasks before verifying the previous works.
 2. **URDF/SDF errors → delete and rewrite, do not iterate.** XML inertia/joint errors compound; starting clean is faster than debugging.
 3. **Nav2 tuning → change ONE parameter at a time**, test, log the result. Never change five parameters simultaneously.
-4. **OpenCV pipelines → always publish a debug image topic** for visual verification in RViz before integrating downstream.
+4. **OpenCV pipelines → always publish a debug image topic** for visual verification (Foxglove Image panel) before integrating downstream.
 5. **Test new nodes standalone with `ros2 run` BEFORE adding to a launch file.**
 6. **Architectural changes require asking the user first (in Turkish).** Don't silently restructure packages or change message types.
 7. **After every commit, verify the push to remote succeeded.**
 8. **Record errors in AI Notes (Turkish):** if a bash command fails unexpectedly, write both the error and the fix into the relevant phase's AI Notes section.
+9. **Keep [docs/RUNNING.md](docs/RUNNING.md) current.** If any change affects how the sim is brought up — `docker/Dockerfile`, `docker/docker-compose.yml`, `src/window_cleaner_bringup/launch/*`, exposed ports, env vars, required external tools, or the Foxglove workflow — update `docs/RUNNING.md` in the **same commit**. Out-of-date bring-up instructions cost the user time on every new session.
 
 ## Verifying Phase Completion
 
