@@ -108,7 +108,7 @@ xhost +localhost
 6. **Architectural changes require asking the user first (in Turkish).** Don't silently restructure packages or change message types.
 7. **After every commit, verify the push to remote succeeded.**
 8. **Record errors in AI Notes (Turkish):** if a bash command fails unexpectedly, write both the error and the fix into the relevant phase's AI Notes section.
-9. **Keep [docs/RUNNING.md](docs/RUNNING.md) current.** If any change affects how the sim is brought up — `docker/Dockerfile`, `docker/docker-compose.yml`, `src/window_cleaner_bringup/launch/*`, exposed ports, env vars, required external tools, or the Foxglove workflow — update `docs/RUNNING.md` in the **same commit**. Out-of-date bring-up instructions cost the user time on every new session.
+9. **Keep [docs/RUNNING.md](docs/RUNNING.md) AND its Turkish counterpart [docs/RUNNING.tr.md](docs/RUNNING.tr.md) current.** If any change affects how the sim is brought up — `docker/Dockerfile`, `docker/docker-compose.yml`, `src/window_cleaner_bringup/launch/*`, exposed ports, env vars, required external tools, or the Foxglove workflow — update **both** files in the **same commit**. The Turkish version is the user's primary reference; out-of-date bring-up instructions cost time every new session. Code/commands/file paths stay in English in both files; only the prose narration is translated.
 
 ## Verifying Phase Completion
 

@@ -22,3 +22,10 @@ media/bags/
 
 # Metrics output
 *.csv.tmp
+
+# Sim debug logs (tee'd output from sim/nav2 launch chains)
+sim.log
+nav2.log
+
+# Claude Code local IDE settings
+.claude/

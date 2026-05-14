@@ -1,0 +1,40 @@
+coverage_planner:
+  ros__parameters:
+    # Same bounds as the basic world (glass surface is identical, 5x3 m).
+    glass_min_x: -2.30
+    glass_max_x: 2.30
+    glass_min_y: -1.30
+    glass_max_y: 1.30
+
+    strip_width: 0.30
+    waypoint_spacing: 0.50
+    start_corner: "SW"
+    path_frame: "map"
+    latch: true
+
+    # Interior obstacles in glass_obstacles.sdf, encoded as a flat list
+    # of axis-aligned bounding boxes: xmin,ymin,xmax,ymax for each.
+    # Coverage_planner will drop waypoints that fall inside any AABB
+    # inflated by obstacle_inflation; Nav2's local planner then routes
+    # around the obstacle to reach the next waypoint.
+    #
+    # Order in the world file:
+    #   mullion_left     pose (-0.80, 0.00), size (0.06, 1.00)
+    #   mullion_right    pose ( 0.80, 0.00), size (0.06, 1.00)
+    #   corner_obs_ne    pose ( 1.95, 1.05), size (0.30, 0.30)
+    obstacles_flat:
+      - -0.83   # mullion_left  xmin
+      - -0.50   # mullion_left  ymin
+      - -0.77   # mullion_left  xmax
+      -  0.50   # mullion_left  ymax
+      -  0.77   # mullion_right xmin
+      - -0.50   # mullion_right ymin
+      -  0.83   # mullion_right xmax
+      -  0.50   # mullion_right ymax
+      -  1.80   # corner_obs_ne xmin
+      -  0.90   # corner_obs_ne ymin
+      -  2.10   # corner_obs_ne xmax
+      -  1.20   # corner_obs_ne ymax
+
+    # Inflation = robot footprint radius (0.18) + 0.07 safety margin.
+    obstacle_inflation: 0.25

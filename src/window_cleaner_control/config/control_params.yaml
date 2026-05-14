@@ -1,0 +1,20 @@
+cleaning_controller:
+  ros__parameters:
+    use_sim_time: true
+
+    # Distance (m) below which a stored dirt centre counts as "under the
+    # vacuum head" and the brush turns on. Robot vacuum-pad radius is 0.12 m;
+    # 0.20 m gives a small overshoot so the brush is on during the pass.
+    dirt_activation_radius: 0.20
+
+    # Minimum lidar range (m) that triggers EMERGENCY. The frame walls sit
+    # ~0.15-1.30 m away during the sweep; 0.08 m is "we are about to hit it".
+    emergency_min_range: 0.08
+
+    # If the lidar reports nothing within emergency_min_range for this long,
+    # leave EMERGENCY and return to MOVING/CLEANING.
+    emergency_clear_seconds: 1.0
+
+    # Hz at which the controller re-evaluates state. 10 is plenty — Nav2's
+    # controller runs at 10 too.
+    tick_rate: 10.0

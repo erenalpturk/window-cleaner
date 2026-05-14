@@ -1,0 +1,33 @@
+coverage_planner:
+  ros__parameters:
+    # Static glass interior bounds in the `map` frame, in metres.
+    # World is 5 m x 3 m with 0.05 m frame walls; we inset by ~robot_radius
+    # (0.18) + small safety margin so the planned strip endpoints sit clear
+    # of the walls. Possible only after 3.12 iteration 3 removed the lidar
+    # obstacle_layer from the global costmap (see nav2_params.yaml) — until
+    # then the moving lidar kept re-marking the static walls at slightly
+    # different cells and NavFn would reject waypoints near +/- 2.30 / 1.30.
+    glass_min_x: -2.30
+    glass_max_x: 2.30
+    glass_min_y: -1.30
+    glass_max_y: 1.30
+
+    # Boustrophedon strip width = vacuum pad diameter (0.24 m) + 0.06 m safety.
+    strip_width: 0.30
+
+    # Distance (m) between successive waypoints along a strip. Smaller =
+    # denser carrot trail for Nav2 RPP, smoother path tracking but more
+    # NavigateThroughPoses overhead. 0.50 m gives ~10 points per 4.6 m
+    # strip — enough to keep RPP lookahead anchored on the current strip.
+    waypoint_spacing: 0.50
+
+    # Where to begin the sweep. One of: SW, SE, NW, NE.
+    start_corner: "SW"
+
+    # Frame in which the path is published; must match Nav2's global frame.
+    path_frame: "map"
+
+    # If true, publishes once at startup with TRANSIENT_LOCAL durability so
+    # late subscribers (e.g. path_follower starting after the planner) still
+    # receive the path. The planner exits its publish loop after one shot.
+    latch: true

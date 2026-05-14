@@ -40,8 +40,17 @@ def generate_launch_description():
         description='Start foxglove_bridge on ws://0.0.0.0:8765',
     )
 
-    spawn_x = DeclareLaunchArgument('x', default_value='-2.0')
-    spawn_y = DeclareLaunchArgument('y', default_value='0.0')
+    # Spawn at the SW corner so the boustrophedon plan's first waypoint
+    # (-2.15, -1.15 in map frame, after coverage_planner's strip_width/2
+    # margin) is right next to the robot. Otherwise Nav2 considers the
+    # first 1-2 waypoints "behind" the robot at startup and skips them,
+    # losing the bottom strip from the coverage sweep.
+    #
+    # Odometry still publishes deltas from the spawn point — but our
+    # ground-truth /odom from the Gazebo DiffDrive plugin reports
+    # WORLD-frame coordinates, so map -> odom can remain identity.
+    spawn_x = DeclareLaunchArgument('x', default_value='-2.15')
+    spawn_y = DeclareLaunchArgument('y', default_value='-1.15')
     spawn_z = DeclareLaunchArgument('z', default_value='0.05')
 
     gz_resource_path = SetEnvironmentVariable(
