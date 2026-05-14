@@ -484,8 +484,8 @@ window-cleaner-robot/
 4. **RViz görsel doğrulama → Foxglove:** Apple Silicon'da RViz açılmadığı için Phase 1'deki kararla uyumlu olarak tüm doğrulamalar Foxglove panellerinde yapıldı.
 5. **`min_area_px` 50 → 200:** Roadmap 50 öneriyordu ama gürültülü ROS image piksellerinde 50 çok düşüktü. 200'e çıkarınca gerçek kir lekeleri korundu, single-pixel noise gitti.
 
-- **Faz sonu commit SHA:** (commit sonrası buraya yazılacak)
-- **Git tag:** `v0.2-phase2-complete` (commit sonrası)
+- **Faz sonu commit SHA:** `09e77ab`
+- **Git tag:** `v0.2-phase2-complete` (pushed to origin)
 
 ---
 
