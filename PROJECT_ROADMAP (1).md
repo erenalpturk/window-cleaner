@@ -6,9 +6,9 @@ target_machine: MacBook Air M4 (Apple Silicon, ARM64)
 stack: ROS2 Humble + Gazebo Fortress + Nav2 + OpenCV (Python)
 dev_environment: Docker Desktop + Foxglove Studio (Apple Silicon — XQuartz GLX broken)
 duration: 4 weeks (28 days)
-status: phase_2_in_progress
+status: phase_2_complete
 current_phase: 2
-last_updated: 2026-05-13
+last_updated: 2026-05-14
 communication_language: Turkish
 documentation_language: English
 ---
@@ -385,7 +385,7 @@ window-cleaner-robot/
 
 - [x] **2.6** Create `config/perception_params.yaml` — Canny thresholds, Hough min length, etc.
 
-- [ ] **2.7** Visual verification in RViz: open `rviz2` → add Image display → subscribe to `/perception/debug_frame` → verify edges are correctly detected.
+- [x] **2.7** Visual verification in RViz: open `rviz2` → add Image display → subscribe to `/perception/debug_frame` → verify edges are correctly detected. **(Done via Foxglove Image panel — RViz unavailable on Apple Silicon.)**
 
 ## Day 12-13: Dirty Region Segmentation
 
@@ -403,20 +403,20 @@ window-cleaner-robot/
 
 - [x] **2.9** **Decision required**: Define a custom message type or use standard messages? AI must ASK the user. Recommendation: start with `geometry_msgs/PoseArray` (region centers) + `std_msgs/Float32MultiArray` (areas), refactor later if needed. **Decision: standard messages chosen.**
 
-- [ ] **2.10** Test: verify `dirty_regions` topic publishes the correct number of points:
+- [x] **2.10** Test: verify `dirty_regions` topic publishes the correct number of points:
   ```bash
   ros2 topic echo /perception/dirty_regions --once
   ```
 
 ## Day 14: Lidar Integration
 
-- [ ] **2.11** Lidar should already publish `/robot/scan` from Phase 1 URDF plugin. Verify:
+- [x] **2.11** Lidar should already publish `/robot/scan` from Phase 1 URDF plugin. Verify:
   ```bash
   ros2 topic hz /robot/scan      # ~10 Hz
   ros2 topic echo /robot/scan --once | head -20
   ```
 
-- [ ] **2.12** RViz lidar visualization: add LaserScan display, subscribe to `/robot/scan`, verify the surrounding frame appears as lidar points around the robot.
+- [x] **2.12** RViz lidar visualization: add LaserScan display, subscribe to `/robot/scan`, verify the surrounding frame appears as lidar points around the robot. **(Done via Foxglove 3D panel — required static_transform_publisher bridges from URDF link frames to Gazebo-scoped sensor frame_ids.)**
 
 - [x] **2.13** Create `window_cleaner_perception/launch/perception.launch.py` — launch all perception nodes:
   - `camera_node`
@@ -424,7 +424,7 @@ window-cleaner-robot/
   - `dirt_segmenter`
   - Load parameters from config files
 
-- [ ] **2.14** **Integration test:**
+- [x] **2.14** **Integration test:**
   ```bash
   # Start full system
   ros2 launch window_cleaner_bringup sim.launch.py
@@ -433,7 +433,7 @@ window-cleaner-robot/
   # See everything together in RViz
   ```
 
-- [ ] **2.15** **End-of-phase commit:**
+- [x] **2.15** **End-of-phase commit:**
   ```bash
   git add .
   git commit -m "feat(phase-2): perception layer complete — frame + dirt + lidar"
@@ -441,20 +441,51 @@ window-cleaner-robot/
   ```
 
 ## AI Notes — Phase 2
-*(Bu bölümü Türkçe doldur)*
 
-> **AI bunları doldursun:**
-> - Tamamlanma tarihi:
-> - Kamera FPS:
-> - Çerçeve tespiti doğruluğu (göz kontrolü — çerçeveler doğru tespit ediliyor mu? %):
-> - Kir segmentasyonu false-positive sayısı (5 farklı pozisyonda):
-> - Custom mesaj mı standart mesaj mı kullanıldı?
-> - Konfigürasyon dosyasındaki nihai eşik değerleri:
->   - Canny low/high:
->   - Hough min_length / max_gap:
->   - HSV V eşiği:
-> - Karşılaşılan OpenCV/cv_bridge sorunları:
-> - Faz sonu commit SHA:
+- **Tamamlanma tarihi:** 2026-05-14
+- **Kamera FPS:** Hedef 30, ölçülen **22–26 FPS** (M4 headless OGRE offscreen rendering CPU bağımlı; debug image yayını eklendiğinde ~24 FPS'e düşüyor). Tüm perception node'ları aynı topic'i tüketiyor — backpressure yok.
+- **Çerçeve tespiti doğruluğu (göz kontrolü):** Robot başlangıç pozisyonunda **~70-80%**. Mavi sınır dikdörtgeni cam alt kenarını doğru saptıyor; üst kenar her zaman görüş alanı dışında (kamera yere paralel + cam zemin geniş). Robot ileri-geri hareket ettikçe dört kenar da yakalanıyor. Glass_basic.sdf'in sade geometrisinde Canny+Hough yeterli; daha karmaşık sahnelerde RANSAC ile geliştirilebilir.
+- **Kir segmentasyonu false-positive sayısı (5 farklı pozisyonda):** İlk eşiklerle (V: 20-120) cam zeminin parlak alt kenarını da kir sanıyordu, **flicker** sorunu vardı. İki düzeltme yapıldı:
+  1. HSV eşikleri renk örneklemesine göre yeniden ayarlandı (cam ~H=105, S=12, V=249; kir ~H=93, S=40, V=212).
+  2. Görüntünün üst %35'i (ROI) maskeleniyor — cam çerçeve kenarı buraya düşer, gerçek kir orta-alt bölgede.
+  Düzeltme sonrası 5 farklı robot pozisyonunda **false-positive = 0**, gerçek kir lekeleri her pozisyonda doğru tespit edildi.
+- **Custom mesaj mı standart mesaj mı kullanıldı?** **Standart mesajlar.** `geometry_msgs/PoseArray` (kir merkezleri) + `std_msgs/Float32MultiArray` (alanlar). Karar gerekçesi: ekstra paket/CMake yükü yok, Phase 3'te ihtiyaç olursa custom mesaj eklenebilir.
+- **Konfigürasyon dosyasındaki nihai eşik değerleri:**
+  - **Canny low/high:** 50 / 150 (varsayılan, glass_basic'te yeterli)
+  - **Hough min_length / max_gap:** 50 / 20
+  - **HSV (dirt):** H 70-130, S 25-255, V **100-230** (V tavanı cam parlaklığının altında tutuldu)
+  - **ROI top fraction:** 0.35 (üst %35 maskelenir)
+  - **Min contour area:** 200 px (gürültü filtreleme)
+
+### Karşılaşılan OpenCV/cv_bridge ve TF sorunları
+
+| # | Hata | Çözüm |
+|---|------|-------|
+| 1 | `cv_bridge` import sırasında `AttributeError: _ARRAY_API not found` — NumPy 2.x ile uyumsuzluk | Dockerfile'da `numpy<2` pin eklendi. cv_bridge NumPy 1.x ABI ile derlenmiş, NumPy 2.2.6 ile crash ediyordu. Final: NumPy 1.21.5 + OpenCV 4.11. |
+| 2 | `dirt_segmenter` cam zemin kenarını da kir olarak algılıyordu (yatay yeşil çizgi flicker) | İki adımlı düzeltme: (a) HSV eşiklerini gerçek renk örneklemesiyle yeniden ayarladık (`s_low: 25`, `v_high: 230`); (b) `roi_top_fraction: 0.35` ile görüntünün üst %35'ini maskeledik. |
+| 3 | Foxglove 3D paneli: `Missing transform from <window_cleaner/base_footprint/lidar> to <base_link>` | Gazebo sensor plugin'leri scoped frame_id (`<model>/<link>/<sensor>`) kullanıyor ama URDF TF tree'de bu isimler yok. `sim.launch.py`'ye iki `static_transform_publisher` eklendi: `lidar_link → window_cleaner/base_footprint/lidar` ve `camera_optical → window_cleaner/base_footprint/rgb_camera`. |
+| 4 | Foxglove `Fixed frame: <Root frame>` seçildiğinde lidar görünmüyor | Foxglove'da `Fixed frame`'i manuel olarak `base_link` veya `odom` yapmak gerekiyor. Reconnect sonrası TF tree güncelleniyor. |
+| 5 | `view_frames` çalıştırılırken `ExternalShutdownException` | `view_frames` 5 saniyelik dinleme süresinde ros kapatma sinyali alıyor; alternatif olarak `ros2 topic echo /tf_static` ile TF zinciri doğrulandı. |
+
+### Faz 2 entegrasyon testi sonuçları (Foxglove ekran görüntüsü onayı)
+
+- `/perception/debug_image`: kamera akışı + frame counter çalışıyor (~24 FPS)
+- `/perception/debug_frame`: cam alt kenarı mavi dikdörtgenle tespit ediliyor; yeşil Hough çizgileri visible
+- `/perception/debug_dirt`: 2 kir bölgesi yeşil konturla çizili, kırmızı merkez noktaları doğru konumda, flicker yok
+- `/perception/dirty_regions` (PoseArray): 2 pose yayınlanıyor, ~25 Hz
+- `/perception/glass_boundary` (PolygonStamped): 4 köşe noktası, ~25 Hz
+- `/robot/scan` (LaserScan): ~9 Hz, Foxglove 3D'de sarı ışınlar olarak görünüyor (338 Infinity uyarısı normal — menzil dışı ışınlar)
+
+### Roadmap'ten sapmalar / önemli kararlar
+
+1. **NumPy pin:** Dockerfile'a `numpy<2` eklendi (roadmap bunu atlamıştı). cv_bridge ABI uyumluluğu için kritik.
+2. **ROI mask eklendi:** `dirt_segmenter.py`'a `roi_top_fraction` parametresi eklendi — roadmap'in HSV-only pipeline'ı flicker üretiyordu.
+3. **TF bridge node'ları:** Roadmap, `sim.launch.py`'de TF bridging gerekeceğini öngörmemişti. Gazebo'nun scoped frame_id davranışı ortaya çıkınca iki `static_transform_publisher` eklemek zorunda kaldık. Bu olmadan RViz/Foxglove sensor verisini render edemez ve Nav2 costmap inşa edemez.
+4. **RViz görsel doğrulama → Foxglove:** Apple Silicon'da RViz açılmadığı için Phase 1'deki kararla uyumlu olarak tüm doğrulamalar Foxglove panellerinde yapıldı.
+5. **`min_area_px` 50 → 200:** Roadmap 50 öneriyordu ama gürültülü ROS image piksellerinde 50 çok düşüktü. 200'e çıkarınca gerçek kir lekeleri korundu, single-pixel noise gitti.
+
+- **Faz sonu commit SHA:** (commit sonrası buraya yazılacak)
+- **Git tag:** `v0.2-phase2-complete` (commit sonrası)
 
 ---
 

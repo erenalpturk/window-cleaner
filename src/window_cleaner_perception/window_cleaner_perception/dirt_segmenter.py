@@ -27,6 +27,8 @@ class DirtSegmenter(Node):
         self.declare_parameter('hsv_v_high', 120)
         self.declare_parameter('morph_kernel', 7)
         self.declare_parameter('min_area_px', 50)
+        # Ignore the top fraction of the image (frame edge / sky region)
+        self.declare_parameter('roi_top_fraction', 0.35)
 
         self.bridge = CvBridge()
 
@@ -44,6 +46,12 @@ class DirtSegmenter(Node):
     def _image_callback(self, msg: Image):
         cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         debug = cv_img.copy()
+        h_img = cv_img.shape[0]
+
+        # Mask out top fraction — contains glass frame edge, not dirt
+        roi_top = int(h_img * self.get_parameter('roi_top_fraction').value)
+        roi_mask = np.zeros(cv_img.shape[:2], dtype=np.uint8)
+        roi_mask[roi_top:, :] = 255
 
         hsv = cv2.cvtColor(cv_img, cv2.COLOR_BGR2HSV)
 
@@ -59,6 +67,7 @@ class DirtSegmenter(Node):
         lower = np.array([h_low, s_low, v_low], dtype=np.uint8)
         upper = np.array([h_high, s_high, v_high], dtype=np.uint8)
         mask = cv2.inRange(hsv, lower, upper)
+        mask = cv2.bitwise_and(mask, roi_mask)
 
         kernel = cv2.getStructuringElement(
             cv2.MORPH_ELLIPSE, (morph_k, morph_k))

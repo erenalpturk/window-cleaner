@@ -122,6 +122,25 @@ def generate_launch_description():
         ],
     )
 
+    # Gazebo sensor plugins publish topics with their own scoped frame_ids
+    # (e.g. window_cleaner/base_footprint/lidar) that do not exist in our URDF
+    # TF tree. Bridge those Gazebo sensor frames to the URDF link frames so
+    # RViz/Foxglove can render the sensor data.
+    lidar_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='lidar_frame_bridge',
+        arguments=['0', '0', '0', '0', '0', '0',
+                   'lidar_link', 'window_cleaner/base_footprint/lidar'],
+    )
+    camera_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='camera_frame_bridge',
+        arguments=['0', '0', '0', '0', '0', '0',
+                   'camera_optical', 'window_cleaner/base_footprint/rgb_camera'],
+    )
+
     return LaunchDescription([
         world_arg,
         gui_arg, rviz_arg, foxglove_arg,
@@ -131,6 +150,8 @@ def generate_launch_description():
         robot_state_publisher,
         spawn,
         bridge,
+        lidar_tf,
+        camera_tf,
         rviz,
         foxglove,
     ])

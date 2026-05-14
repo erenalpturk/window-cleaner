@@ -12,15 +12,19 @@ frame_detector:
 dirt_segmenter:
   ros__parameters:
     # HSV range for brown/dark dirt regions
-    # H: 0-30 covers brown/dark-yellow hues
-    hsv_h_low: 0
-    hsv_h_high: 30
-    hsv_s_low: 20
-    hsv_s_high: 150
-    # V: low brightness = dark/dirty
-    hsv_v_low: 20
-    hsv_v_high: 120
+    # Glass surface: H~105, S~12, V~249 (bright, near-white/blue)
+    # Dirt regions:  H~93,  S~40, V~180-220 (darker, more saturated)
+    # We target lower V AND higher S than the glass background.
+    hsv_h_low: 70
+    hsv_h_high: 130
+    hsv_s_low: 25
+    hsv_s_high: 255
+    # V ceiling kept below glass brightness to exclude the clean surface
+    hsv_v_low: 100
+    hsv_v_high: 230
     # Morphological closing kernel size
     morph_kernel: 7
     # Minimum contour area in pixels to count as a region
-    min_area_px: 50
+    min_area_px: 200
+    # Ignore top N% of image (glass frame edge lives there, not dirt)
+    roi_top_fraction: 0.35
