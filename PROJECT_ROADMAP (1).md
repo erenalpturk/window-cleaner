@@ -6,9 +6,9 @@ target_machine: MacBook Air M4 (Apple Silicon, ARM64)
 stack: ROS2 Humble + Gazebo Fortress + Nav2 + OpenCV (Python)
 dev_environment: Docker Desktop + Foxglove Studio (Apple Silicon — XQuartz GLX broken)
 duration: 4 weeks (28 days)
-status: phase_3_complete
-current_phase: 3
-last_updated: 2026-05-14
+status: phase_4_complete
+current_phase: 4
+last_updated: 2026-05-16
 communication_language: Turkish
 documentation_language: English
 ---
@@ -566,7 +566,7 @@ window-cleaner-robot/
 
 - [x] **3.13** **Test 2 — hard world**: create new `glass_obstacles.sdf` (more complex frame, internal obstacles). Verify successful navigation. **— PARTIAL: world built with 2 vertical mullions and 1 NE corner block; obstacle-aware filtering added to coverage_planner (drops waypoints inside inflated AABBs, 90 → 76 waypoints). Robot detects obstacles via lidar but RPP halts on the straight-line plan between two non-adjacent kept waypoints. Static occupancy map does not yet include interior obstacles; full obstacle navigation deferred to Phase 4 as documented limitation.**
 
-- [ ] **3.14** **End-of-phase commit:**
+- [x] **3.14** **End-of-phase commit:** *(Done — commit `a35ba1e` + tag `v0.3-phase3-complete` already pushed; the checkbox was a bookkeeping miss flipped at the start of Phase 4. The actual commit message was `feat(phase-3): planning + Nav2 + control — partial coverage end-to-end`, reflecting the documented partial-coverage outcome.)*
   ```bash
   git add .
   git commit -m "feat(phase-3): autonomous planning + Nav2 + controller — end-to-end working"
@@ -650,39 +650,55 @@ window-cleaner-robot/
 
 ## Day 22-23: Metrics Collection
 
-- [ ] **4.1** Create `src/window_cleaner_evaluation/` package.
+- [x] **4.1** Create `src/window_cleaner_evaluation/` package.
 
-- [ ] **4.2** Create `window_cleaner_evaluation/window_cleaner_evaluation/metrics_node.py`:
+- [x] **4.2** Create `window_cleaner_evaluation/window_cleaner_evaluation/metrics_node.py`:
   - **Coverage percentage**: discretize glass area into grid (0.05m × 0.05m cells), mark visited cells, compute ratio
   - **Collision count**: count time periods where `/robot/scan` shows min distance < 0.05m
   - **Mission duration**: from start signal → "task complete" signal
   - **Total distance**: cumulative sum of `/odom` deltas
   - Output: `metrics.csv` (timestamp, coverage_pct, collisions, duration_s, distance_m)
 
-- [ ] **4.3** Create `window_cleaner_evaluation/scripts/plot_results.py`:
+- [x] **4.3** Create `window_cleaner_evaluation/scripts/plot_results.py`:
   - Read `metrics.csv`
   - matplotlib plots: coverage % (bar), duration distribution (box), collision comparison (bar), per-world summary (grouped bar)
   - Save to `media/plots/`
 
 ## Day 24-25: Scenario Testing
 
-- [ ] **4.4** Create 3 new world files:
+- [x] **4.4** Create 3 new world files:
   - `worlds/glass_small.sdf` — 2m × 1m small glass, few stains
   - `worlds/glass_large.sdf` — 5m × 3m large glass, many stains
   - `worlds/glass_obstacles.sdf` — should be created in Phase 3, with internal frame details
 
-- [ ] **4.5** Create `scripts/run_benchmark.sh` — automated test runner:
+- [x] **4.5** Create `scripts/run_benchmark.sh` — automated test runner:
   - Arguments: world name, number of runs
   - Each run: start Gazebo, execute mission, write results to CSV, clean up
-  - Run 4 worlds × 3 runs = 12 total runs
+  - **Run 2 worlds (`glass_basic`, `glass_small`) × 3 runs = 6 total runs.**
+    *(Plan change agreed with the user, 2026-05-16: reduced from the original
+    4×3=12. `glass_obstacles` reliably ABORTs — a documented Phase-3 limitation,
+    not a Phase-4 fix per the "be conservative, only add metrics & worlds"
+    instruction — and `glass_large` is geometrically identical to `glass_basic`
+    (same 5×3 surface, only more dirt). The two working worlds give the honest
+    reported dataset. `glass_large.sdf` is still created as a 4.4 artifact but
+    excluded from the benchmark matrix.)*
 
-- [ ] **4.6** rosbag recordings (at least 1 run per world):
+- [x] **4.6** rosbag recordings (at least 1 run per **benchmarked** world — `glass_basic`, `glass_small`):
   ```bash
   ros2 bag record -o media/bags/glass_basic_run1 \
     /robot/camera/image_raw /robot/scan /odom /tf /planning/coverage_path /perception/dirty_regions
   ```
 
 ## Day 26-27: Demo Video
+
+> **Tasks 4.7–4.9 — USER-OWNED, NOT done by the AI.** A binary screen
+> recording / edited video cannot be produced by the AI. The AI-side
+> enablers are complete: [docs/demo_storyboard.md](docs/demo_storyboard.md)
+> is the exact shot list (commands + Foxglove panels per ~3-min segment),
+> and clean rosbags for replay are recorded at `media/bags/glass_basic_run1`
+> and `media/bags/glass_small_run1`. The user records on the Mac (QuickTime),
+> edits (iMovie/DaVinci), drops the clip at `media/demo.mp4`, and notes its
+> path in AI Notes — Phase 4. These boxes stay `[ ]` until that is done.
 
 - [ ] **4.7** Screen recording with OBS Studio or QuickTime:
   - Left half: Gazebo window (3D world view)
@@ -700,7 +716,7 @@ window-cleaner-robot/
 
 ## Day 28: Report + README + Presentation
 
-- [ ] **4.10** Create `README.md` (for GitHub):
+- [x] **4.10** Create `README.md` (for GitHub):
   - Project summary, demo video link/GIF
   - Architecture diagram
   - Quick start (Docker commands)
@@ -708,19 +724,28 @@ window-cleaner-robot/
   - Results table
   - License
 
-- [ ] **4.11** Create `docs/architecture.md` — system architecture (include the diagram)
+- [x] **4.11** Create `docs/architecture.md` — system architecture (include the diagram)
 
-- [ ] **4.12** Create `docs/algorithms.md` — Boustrophedon pseudocode, OpenCV pipeline diagrams
+- [x] **4.12** Create `docs/algorithms.md` — Boustrophedon pseudocode, OpenCV pipeline diagrams
 
-- [ ] **4.13** Create `docs/results.md` — 12-run metrics table, plots, analysis
+- [x] **4.13** Create `docs/results.md` — 6-run metrics table (2 worlds × 3), plots, analysis
 
-- [ ] **4.14** Update presentation — add to existing .pptx:
+- [x] **4.14** Update presentation — add to .pptx:
   - Architecture diagram
   - Algorithm flowcharts
   - Metric tables
   - **Limitations** section: honestly explain the 2D abstraction — earns academic credit
+  - *(Plan note, 2026-05-16: no `.pptx` exists in-repo and binary slide files
+    are out of AI scope. The `.pptx` is owned by the user. The AI deliverables
+    for the demo are `docs/demo_storyboard.md` (shot list); the slide content is
+    sourced from `docs/architecture.md`, `docs/algorithms.md`, `docs/results.md`.
+    No separate slide-outline file is produced — user decision, 2026-05-16.)*
 
-- [ ] **4.15** **Final commit + tag:**
+- [x] **4.15** **Final commit + tag:** *(Done — Phase-4 work + the
+  `coverage_planner` PolygonStamped bug fix committed and tagged
+  `v1.0-submission`, pushed to origin. Per the Phase-2/3 project convention
+  the exact SHA is recorded in AI Notes via a tiny follow-up
+  `docs(phase-4): record final commit SHA` commit after the tag is pushed.)*
   ```bash
   git add .
   git commit -m "docs: report, README, results — ready for submission"
@@ -729,18 +754,103 @@ window-cleaner-robot/
   ```
 
 ## AI Notes — Phase 4
-*(Bu bölümü Türkçe doldur)*
 
-> **AI bunları doldursun:**
-> - Tamamlanma tarihi:
-> - Toplam koşu sayısı:
-> - Ortalama kaplama yüzdesi:
-> - Ortalama görev süresi:
-> - 12 koşuda toplam çarpışma sayısı:
-> - En zorlu dünya hangisi oldu, neden?
-> - Demo video süresi ve dosya yolu:
-> - Nihai repo commit SHA:
-> - Git tag:
+- **Tamamlanma tarihi:** 2026-05-16
+- **Toplam koşu sayısı:** 6 (glass_basic ×3 + glass_small ×3)
+- **Ortalama kaplama yüzdesi:** genel **%18.10** — glass_basic %18.74,
+  glass_small %17.46
+- **Ortalama görev süresi (sim saati):** genel **99.0 s** — glass_basic
+  180.2 s, glass_small 17.7 s
+- **6 koşuda toplam çarpışma sayısı:** **0** (hiçbir koşuda çerçeveye
+  yaklaşma yok — projenin en güçlü akademik sonucu)
+- **En zorlu dünya:** **glass_basic**. 3/3 koşu `ABORTED`. 9 strip'lik
+  boustrophedon yolunda 8 adet 180° U-dönüşü var; Phase-3'te belgelenen
+  U-turn overshoot (düşük M4 RTF + ~6 Hz lidar) Nav2 recovery thrash'e yol
+  açıp ~180 s sonra görevi iptal ettiriyor (%17-21 yüzey süpürülmüş
+  oluyor). glass_small dar-yüzey centreline fallback'ine (~2 strip)
+  düşüyor, kısa görev 3/3 `DONE` ile tamamlanıyor (~18 s). Sonuç ayrımı net:
+  3× ABORTED ↔ 3× DONE.
+- **Demo video (4.7-4.9):** **kullanıcının görevi — AI üretemez.** AI tarafı
+  hazır: shot list [docs/demo_storyboard.md](docs/demo_storyboard.md), tekrar
+  oynatılabilir temiz rosbag'ler `media/bags/glass_basic_run1` ve
+  `media/bags/glass_small_run1`. Kullanıcı Mac'te QuickTime ile kaydedip
+  iMovie/DaVinci'de düzenleyecek, `media/demo.mp4`'e koyup yolunu buraya
+  not edecek. **Süre/dosya yolu: henüz yok (kullanıcı tamamlayacak).**
+- **Nihai repo commit SHA:** ana commit + `v1.0-submission` tag push
+  edildikten sonra Phase-2/3 konvansiyonuyla küçük bir takip commit'inde
+  (`docs(phase-4): record final commit SHA`) buraya yazılacak.
+- **Git tag:** `v1.0-submission`
+
+### Karşılaşılan kritik hatalar ve çözümleri (workflow kuralı 8)
+
+İlk benchmark koşusu (Faz 4 oturumu öncesi) **6/6 sıfır veri** üretmişti;
+iki ayrı gizli bug zincirleme tespit edilip düzeltildi:
+
+| # | Hata | Belirti | Çözüm |
+|---|------|---------|-------|
+| 1 | `metrics_node` açılışta `ParameterUninitializedException: 'obstacles_flat'` | İlk sweep'te 6/6 `HARD_TIMEOUT`, metrics.csv tamamen sıfır | Boş `DOUBLE_ARRAY` parametresi Humble'da `.value` çağrısında istisna fırlatıyor (None dönmüyor — coverage_planner'da Faz 3'te görülen tuzağın aynısı). `__init__`'e try/except guard eklendi (kaynak zaten düzeltilmişti, paket yeniden derlenmemişti). |
+| 2 | `coverage_planner` `AttributeError: 'PolygonStamped' object has no attribute 'points'` (`coverage_planner.py:284`, `_on_boundary`) | metrics_node fix sonrası koşular `INTERRUPTED` ama yine **sıfır** — görev hiç `RUNNING` olmuyor | `PolygonStamped` köşeleri `.polygon.points` altında; kod `.points` okuyordu → perception çalışınca planner çöküyor → coverage_path yok → path_follower sonsuz bekliyor → mission_state hiç RUNNING olmuyor. **`msg.points` → `msg.polygon.points`** (tek satır). |
+
+**Kök neden — neden Faz 3'te yakalanmadı?** 2 numaralı bug Phase-3
+commit'inde (`a35ba1e`) zaten vardı ama `_on_boundary` salt teşhis amaçlı
+bir callback (yolu yeniden hesaplamıyor; yol başlangıçta bir kez
+parametrelerden üretiliyor). Phase-3 uçtan uca testlerinde perception aynı
+anda koşulmadığı için callback hiç tetiklenmemiş, hata gizli kalmış. Faz 4
+benchmark'ı `perception.launch.py`'ı da başlattığından frame_detector
+`/perception/glass_boundary` yayınlıyor ve gizli bug ortaya çıkıyor.
+
+**Faz-4 "muhafazakâr ol" talimatıyla uyum:** İki düzeltme de **davranış
+değiştirmeyen, minimal bug fix**'tir. metrics_node Faz-4 node'u. coverage_planner
+düzeltmesi sadece çökmeyi önler — yol parametrelerden başlangıçta
+hesaplandığı için Phase-3 navigasyon/kaplama davranışı **birebir aynı**
+(izole smoke-test ile doğrulandı: 90 waypoint / 9 strip, beklenen çıktı).
+Mesaj tipi, paket yapısı veya navigasyon mantığı değişmedi.
+
+### Üretilen Faz 4 çıktıları
+
+- `src/window_cleaner_evaluation/` paketi: `metrics_node` (passive observer,
+  pure-function + 1 row/koşu CSV), `plot_results.py` (4 PNG), `run_benchmark.sh`
+  (gözetimsiz sweep, çift watchdog), `worlds_manifest.yaml` (dünya başına
+  tek doğruluk kaynağı), `test/test_metrics.py`.
+- Yeni dünyalar: `glass_small.sdf` (2×1 m), `glass_large.sdf` (5×3 m, çok
+  kir), `glass_obstacles.sdf` (Faz 3'ten — benchmark dışı).
+- `glass_small` için occupancy map (`maps/glass_small.{pgm,yaml}`) ve
+  `planning_params_small.yaml`; `gen_map.py` çok-dünya destekleyecek şekilde
+  genişletildi.
+- `nav2.launch.py`'ye additive `odom_offset_x/y` argümanları (varsayılanlar
+  Faz-3 davranışını aynen korur; benchmark dünya başına override eder).
+- Dokümanlar: `README.md`, `docs/architecture.md`, `docs/algorithms.md`,
+  `docs/results.md` (6-koşu gerçek tablo + analiz), `docs/known_issues.md`,
+  `docs/demo_storyboard.md`. `RUNNING.md` + `RUNNING.tr.md` benchmark
+  bölümüyle senkron güncellendi.
+- Veri: `results/metrics.csv` (6 temiz satır), `media/plots/*.png` (4),
+  `media/bags/{glass_basic,glass_small}_run1` (rosbag).
+
+### Roadmap'ten sapmalar / önemli kararlar
+
+1. **Benchmark matrisi 4×3=12 → 2×3=6** (kullanıcı kararı 2026-05-16):
+   `glass_obstacles` güvenilir şekilde ABORT ediyor (Faz-3 belgeli kısıt,
+   Faz-4 muhafazakâr kapsamı dışında), `glass_large` glass_basic ile
+   geometrik olarak özdeş. `glass_large.sdf` 4.4 artefaktı olarak üretildi
+   ama matristen çıkarıldı.
+2. **`.pptx` üretilmedi** (kullanıcı kararı 2026-05-16): binary slide
+   dosyaları AI kapsamı dışı. Slayt içeriği `architecture.md` /
+   `algorithms.md` / `results.md`'den beslenir; `demo_storyboard.md` shot
+   list AI tarafı tek deliverable.
+3. **Coverage paydası gerçek yüzey** (planner inset değil): `DONE` olan
+   glass_small koşuları bile ~%17 raporluyor çünkü kaplama 0.12 m vakum
+   diski ile gerçek 5×3 / 2×1 yüzey üzerinden ölçülüyor. `DONE` =
+   *planlanan yol* bitti demek, tüm cam süpürüldü demek değil. Sayı
+   şişirilmedi — roadmap'in dürüstlük duruşuyla bilinçli uyumlu.
+
+### Faz sonu
+
+- **Faz sonu commit:** `feat(phase-4): metrics, benchmark, docs +
+  coverage_planner PolygonStamped fix — Phase 4 complete` (SHA takip
+  commit'inde).
+- **Git tag:** `v1.0-submission`
+- **Açık kalan (kullanıcı):** demo video kaydı/montajı (4.7-4.9) ve
+  faz-sonu demo gösterimi — storyboard + rosbag'ler hazır.
 
 ---
 

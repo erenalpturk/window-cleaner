@@ -25,6 +25,8 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
     map_yaml_arg = LaunchConfiguration('map')
     params_file = LaunchConfiguration('params_file')
+    odom_offset_x = LaunchConfiguration('odom_offset_x')
+    odom_offset_y = LaunchConfiguration('odom_offset_y')
 
     declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time', default_value='true',
@@ -38,6 +40,17 @@ def generate_launch_description():
     declare_params_file = DeclareLaunchArgument(
         'params_file', default_value=nav2_params,
         description='Path to the Nav2 parameter file')
+    # Phase 4 (additive): the `map -> odom` offset must equal the spawn
+    # position (see the comment on map_to_odom below). Defaults reproduce the
+    # exact pre-Phase-4 behaviour for the 5x3 worlds; run_benchmark.sh passes
+    # the per-world SW-corner spawn for `glass_small` (whose surface is too
+    # small for the hard-coded -2.15/-1.15).
+    declare_odom_offset_x = DeclareLaunchArgument(
+        'odom_offset_x', default_value='-2.15',
+        description='map->odom x offset; must match the sim spawn x')
+    declare_odom_offset_y = DeclareLaunchArgument(
+        'odom_offset_y', default_value='-1.15',
+        description='map->odom y offset; must match the sim spawn y')
 
     lifecycle_nodes = [
         'map_server',
@@ -58,7 +71,8 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='map_to_odom_static',
-        arguments=['-2.15', '-1.15', '0', '0', '0', '0', 'map', 'odom'],
+        arguments=[odom_offset_x, odom_offset_y, '0', '0', '0', '0',
+                   'map', 'odom'],
         output='screen',
     )
 
@@ -139,6 +153,8 @@ def generate_launch_description():
         declare_autostart,
         declare_map_yaml,
         declare_params_file,
+        declare_odom_offset_x,
+        declare_odom_offset_y,
         map_to_odom,
         map_server,
         controller_server,

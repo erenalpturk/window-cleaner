@@ -281,7 +281,9 @@ class CoveragePlannerNode(Node):
         # Sanity check only. frame_detector publishes pixel coordinates,
         # so we cannot meaningfully compare extents — just confirm a
         # boundary message is flowing for the upcoming demo overlay.
-        n = len(msg.points)
+        # PolygonStamped nests the vertices under .polygon.points; the
+        # path itself is computed once from params, never from this msg.
+        n = len(msg.polygon.points)
         if n != 4:
             self.get_logger().debug(
                 f"glass_boundary has {n} points (expected 4)"

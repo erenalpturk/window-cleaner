@@ -470,6 +470,73 @@ ayarlamak için
 `src/window_cleaner_planning/config/planning_params.yaml`'i düzenle ve
 `planning.launch.py`'yi yeniden başlat.
 
+## Benchmark'ı çalıştırma (Faz 4)
+
+Faz 4 `window_cleaner_evaluation` paketini ekler: pasif bir `metrics_node`
+(misyon başına bir CSV satırı), gözetimsiz `run_benchmark.sh` taraması ve
+çevrimdışı `plot_results.py`.
+
+**Benchmark matrisi:** `glass_basic` + `glass_small`, her biri 3 koşu = 6
+koşu (plan değişikliği 2026-05-16 — `glass_obstacles` güvenilir şekilde
+ABORT ediyor, belgelenmiş bir Faz-3 sınırlaması; `glass_large` geometrik
+olarak `glass_basic` ile aynı). Birçok koşu ABORTED/kısmi biter — bu bir
+başarısızlık değil, dürüst veri setinin kendisidir.
+
+Tüm taramayı **tek** komutla çalıştır (tek uzun-ömürlü container; script
+koşular arasında Gazebo/DDS'i süreçleri öldürerek sıfırlar). Tamamen
+gözetimsizdir (M4'te ~30–50 dk):
+
+```bash
+docker compose -f docker/docker-compose.yml run --service-ports --rm \
+  --name wc-bench ros2-dev \
+  bash -c "source install/setup.bash && \
+    bash install/window_cleaner_evaluation/share/window_cleaner_evaluation/scripts/run_benchmark.sh --all --runs 3"
+```
+
+Seçenekler: `--world glass_basic|glass_small`, `--runs N`, `--timeout S`
+(koşu başına sabit duvar-saati, varsayılan 480), `--bag` (her dünyanın 1.
+koşusunda rosbag kaydı → `media/bags/`, görev 4.6).
+
+Çıktılar:
+
+* `results/metrics.csv` — koşu başına bir satır: `timestamp,world,
+  run_index,mission_result,coverage_pct,collisions,duration_s,distance_m`
+  (commit edilir).
+* `results/benchmark_summary.txt`, `results/logs/<world>_run<N>/*.log` —
+  ABORT'u sonradan teşhis için süreç-başına log (git-ignore).
+* `media/plots/*.png` — kaplama / süre / çarpışma / özet grafikleri,
+  sonda otomatik üretilir (commit edilir).
+
+Tek misyon, manuel (debug): normal Faz-3 yığınını başlat (sim → nav2 →
+perception → planning → control) ve `metrics_node` ekle:
+
+```bash
+docker compose -f docker/docker-compose.yml exec wc-sim bash -c \
+  "source install/setup.bash && \
+   ros2 launch window_cleaner_evaluation metrics.launch.py run_id:=1"
+```
+
+Bir dünya SDF'ini düzenledikten sonra Nav2 haritalarını yeniden üret (her
+dünyanın `.pgm` + `.yaml`'ını yazar; `glass_basic` grid içeriği tasarım
+gereği değişmez):
+
+```bash
+docker compose -f docker/docker-compose.yml exec wc-sim bash -c \
+  "python3 src/window_cleaner_bringup/maps/gen_map.py"
+```
+
+`nav2.launch.py` artık additive `odom_offset_x` / `odom_offset_y`
+argümanları alıyor (varsayılan `-2.15` / `-1.15`, yani 5×3 dünyalar için
+değişmemiş). Benchmark, 2×1 yüzeyi sabit-kodlu offset'e sığmayan
+`glass_small` için dünya-başına SW spawn'ı geçer.
+
+Mevcut bir CSV'den istediğin zaman yeniden grafik üret:
+
+```bash
+docker compose -f docker/docker-compose.yml exec wc-sim bash -c \
+  "python3 install/window_cleaner_evaluation/share/window_cleaner_evaluation/scripts/plot_results.py"
+```
+
 ## Topic özet tablosu
 
 | Topic | Tip | Hz | Yön |

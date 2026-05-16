@@ -1,0 +1,56 @@
+metrics_node:
+  ros__parameters:
+    # Clock: every duration is measured off /clock because Gazebo runs below
+    # 1.0 RTF on Apple Silicon. run_benchmark.sh / metrics.launch.py force
+    # use_sim_time:=true.
+
+    # Real glass-surface bounds in the `map` frame (metres). DEFAULTS are the
+    # 5x3 basic/large world (surface +/-2.50 / +/-1.50). run_benchmark.sh
+    # overrides these per world from config/worlds_manifest.yaml. NOTE: these
+    # are the *real surface*, NOT the coverage_planner inset (+/-2.30/1.30):
+    # measuring coverage over the real surface honestly reflects the
+    # uncleaned wall-adjacent strip the planner intentionally skips.
+    glass_min_x: -2.50
+    glass_max_x:  2.50
+    glass_min_y: -1.50
+    glass_max_y:  1.50
+
+    # Coverage cell size (roadmap 4.2 specifies 0.05 m).
+    cell_size: 0.05
+
+    # Vacuum-pad radius (0.12 m), NOT the 0.18 m chassis radius — coverage
+    # means the cleaning head passed over the cell.
+    footprint_radius: 0.12
+
+    odom_topic: "/odom"
+    scan_topic: "/robot/scan"
+    mission_state_topic: "/control/mission_state"
+
+    # A counted collision is "effectively touching" (0.05 m), intentionally
+    # tighter than the controller's 0.08 m emergency-stop ("about to hit").
+    collision_range_threshold: 0.05
+    # One physical contact = one event; clears only after this many seconds
+    # continuously clear (mirrors the controller's 1.0 s EMERGENCY hysteresis).
+    collision_clear_hysteresis_s: 1.0
+
+    # Watchdog: finalise a stuck mission as TIMEOUT so an unattended
+    # benchmark never hangs. ~278 s is the documented successful run; 420 s
+    # gives generous headroom. run_benchmark.sh has an outer wall-clock
+    # backstop on top of this.
+    max_mission_duration_s: 420.0
+
+    # Reject single-step odom jumps larger than this (teleport / reset
+    # artefact) from the distance integral.
+    jump_reject_m: 0.5
+
+    results_dir: "/workspace/results"
+    csv_filename: "metrics.csv"
+
+    # Overridden per run by run_benchmark.sh.
+    world_name: "glass_basic"
+    run_index: 0
+
+    # Interior obstacle AABBs [xmin0,ymin0,xmax0,ymax0, ...] excluded from
+    # the coverage denominator. Empty for basic/small. Only the (non-
+    # benchmarked) obstacles world would set this.
+    obstacles_flat: []

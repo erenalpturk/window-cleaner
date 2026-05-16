@@ -451,6 +451,71 @@ IDLE       (mission_state -> DONE)
 and clears after the lane stays open for `1.0 s` (hysteresis prevents
 flicker). In EMERGENCY the controller zeroes `/cmd_vel` to override Nav2.
 
+## Running the benchmark (Phase 4)
+
+Phase 4 adds the `window_cleaner_evaluation` package: a passive
+`metrics_node` (one CSV row per mission), an unattended `run_benchmark.sh`
+sweep, and an offline `plot_results.py`.
+
+**Benchmark matrix:** `glass_basic` + `glass_small`, 3 runs each = 6 runs
+(plan change 2026-05-16 — `glass_obstacles` reliably ABORTs, a documented
+Phase-3 limitation; `glass_large` is geometrically identical to
+`glass_basic`). Many runs end ABORTED/partial — that is the honest dataset,
+not a failure.
+
+Run the whole sweep with **one** command (one long-lived container; the
+script resets Gazebo/DDS between runs by killing processes). It is fully
+unattended (~30–50 min on the M4):
+
+```bash
+docker compose -f docker/docker-compose.yml run --service-ports --rm \
+  --name wc-bench ros2-dev \
+  bash -c "source install/setup.bash && \
+    bash install/window_cleaner_evaluation/share/window_cleaner_evaluation/scripts/run_benchmark.sh --all --runs 3"
+```
+
+Options: `--world glass_basic|glass_small`, `--runs N`, `--timeout S`
+(hard wall-clock per run, default 480), `--bag` (record a rosbag on run 1
+of each world → `media/bags/`, task 4.6).
+
+Outputs:
+
+* `results/metrics.csv` — one row per run: `timestamp,world,run_index,
+  mission_result,coverage_pct,collisions,duration_s,distance_m` (committed).
+* `results/benchmark_summary.txt`, `results/logs/<world>_run<N>/*.log` —
+  per-process logs for post-hoc ABORT diagnosis (git-ignored).
+* `media/plots/*.png` — coverage / duration / collision / summary plots,
+  auto-generated at the end (committed).
+
+Single mission, manual (debug): start the normal Phase-3 stack (sim → nav2
+→ perception → planning → control) and add `metrics_node`:
+
+```bash
+docker compose -f docker/docker-compose.yml exec wc-sim bash -c \
+  "source install/setup.bash && \
+   ros2 launch window_cleaner_evaluation metrics.launch.py run_id:=1"
+```
+
+Regenerate Nav2 maps after editing a world SDF (writes every world's
+`.pgm` + `.yaml`; the `glass_basic` grid content is unchanged by design):
+
+```bash
+docker compose -f docker/docker-compose.yml exec wc-sim bash -c \
+  "python3 src/window_cleaner_bringup/maps/gen_map.py"
+```
+
+`nav2.launch.py` now takes additive `odom_offset_x` / `odom_offset_y`
+arguments (default `-2.15` / `-1.15`, i.e. unchanged for the 5×3 worlds).
+The benchmark passes the per-world SW spawn for `glass_small`, whose 2×1
+surface does not fit the hard-coded offset.
+
+Re-plot from an existing CSV at any time:
+
+```bash
+docker compose -f docker/docker-compose.yml exec wc-sim bash -c \
+  "python3 install/window_cleaner_evaluation/share/window_cleaner_evaluation/scripts/plot_results.py"
+```
+
 ## Topic cheat-sheet
 
 | Topic | Type | Hz | Direction |

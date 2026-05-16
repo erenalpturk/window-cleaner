@@ -1,0 +1,7 @@
+timestamp,world,run_index,mission_result,coverage_pct,collisions,duration_s,distance_m
+2026-05-16T13:28:56,glass_basic,1,ABORTED,16.73,0,172.4,20.345
+2026-05-16T13:33:20,glass_basic,2,ABORTED,20.95,0,189.8,22.178
+2026-05-16T13:37:27,glass_basic,3,ABORTED,18.55,0,178.5,20.939
+2026-05-16T13:38:31,glass_small,1,DONE,16.75,0,16.8,1.539
+2026-05-16T13:39:35,glass_small,2,DONE,17.75,0,18.2,1.648
+2026-05-16T13:40:39,glass_small,3,DONE,17.88,0,18.1,1.660

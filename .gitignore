@@ -8,6 +8,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
+.pytest_cache/
 
 # macOS
 .DS_Store
@@ -26,6 +27,14 @@ media/bags/
 # Sim debug logs (tee'd output from sim/nav2 launch chains)
 sim.log
 nav2.log
+
+# Phase 4 benchmark outputs:
+#   results/metrics.csv  -> COMMITTED (docs/results.md deliverable)
+#   media/plots/*.png    -> COMMITTED (referenced by README/results.md)
+#   media/bags/          -> ignored above (large rosbags)
+# Transient per-run logs and the sync flag are not committed:
+results/logs/
+results/.run_complete
 
 # Claude Code local IDE settings
 .claude/

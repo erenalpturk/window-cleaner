@@ -1,0 +1,46 @@
+# Per-world single source of truth — consumed ONLY by
+# scripts/run_benchmark.sh (parsed with a small python3/yaml reader). The
+# Phase-3 nodes keep their own param files unchanged (conservative); this
+# manifest just tells the benchmark which SDF / Nav2 map / planner params /
+# spawn / metrics bounds go together so they never drift.
+#
+# INVARIANTS (must stay consistent when edited):
+#   * spawn_{x,y} == the map->odom offset passed to nav2.launch.py
+#     (odom_offset_x/y). Gazebo DiffDrive makes /odom the spawn frame; the
+#     static TF "undoes" the spawn so map-frame == world-frame.
+#   * spawn_{x,y} == planner_inset_min + strip_width/2  (SW corner, so the
+#     first boustrophedon waypoint sits under the robot).
+#   * glass_{min,max}_{x,y} below are the REAL glass surface (for the
+#     coverage denominator), NOT the coverage_planner inset. Keep them in
+#     sync with the surface <box> size in the matching world SDF.
+#
+# Benchmark matrix (user decision 2026-05-16): glass_basic + glass_small
+# only. glass_obstacles reliably ABORTs (documented Phase-3 limitation);
+# glass_large is geometrically identical to glass_basic.
+
+benchmark_worlds:
+  - glass_basic
+  - glass_small
+
+worlds:
+  glass_basic:
+    sdf: install/window_cleaner_worlds/share/window_cleaner_worlds/worlds/glass_basic.sdf
+    map: install/window_cleaner_bringup/share/window_cleaner_bringup/maps/glass_basic.yaml
+    planner_params: install/window_cleaner_planning/share/window_cleaner_planning/config/planning_params.yaml
+    spawn_x: -2.15
+    spawn_y: -1.15
+    glass_min_x: -2.50
+    glass_max_x: 2.50
+    glass_min_y: -1.50
+    glass_max_y: 1.50
+
+  glass_small:
+    sdf: install/window_cleaner_worlds/share/window_cleaner_worlds/worlds/glass_small.sdf
+    map: install/window_cleaner_bringup/share/window_cleaner_bringup/maps/glass_small.yaml
+    planner_params: install/window_cleaner_planning/share/window_cleaner_planning/config/planning_params_small.yaml
+    spawn_x: -0.65
+    spawn_y: -0.15
+    glass_min_x: -1.00
+    glass_max_x: 1.00
+    glass_min_y: -0.50
+    glass_max_y: 0.50

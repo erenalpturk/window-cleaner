@@ -1,0 +1,20 @@
+[13:25:02] benchmark start — worlds=[glass_basic glass_small] runs=3 timeout=480s bag=1
+[13:25:02] === glass_basic run 1 — spawn=(-2.15,-1.15) sdf=install/window_cleaner_worlds/share/window_cleaner_worlds/worlds/glass_basic.sdf ===
+[13:28:58]   -> result=ABORTED
+[13:29:12] === glass_basic run 2 — spawn=(-2.15,-1.15) sdf=install/window_cleaner_worlds/share/window_cleaner_worlds/worlds/glass_basic.sdf ===
+[13:33:23]   -> result=ABORTED
+[13:33:37] === glass_basic run 3 — spawn=(-2.15,-1.15) sdf=install/window_cleaner_worlds/share/window_cleaner_worlds/worlds/glass_basic.sdf ===
+[13:37:28]   -> result=ABORTED
+[13:37:42] === glass_small run 1 — spawn=(-0.65,-0.15) sdf=install/window_cleaner_worlds/share/window_cleaner_worlds/worlds/glass_small.sdf ===
+[13:38:35]   -> result=DONE
+[13:38:49] === glass_small run 2 — spawn=(-0.65,-0.15) sdf=install/window_cleaner_worlds/share/window_cleaner_worlds/worlds/glass_small.sdf ===
+[13:39:40]   -> result=DONE
+[13:39:54] === glass_small run 3 — spawn=(-0.65,-0.15) sdf=install/window_cleaner_worlds/share/window_cleaner_worlds/worlds/glass_small.sdf ===
+[13:40:39]   -> result=DONE
+[13:40:53] benchmark done — generating plots
+[plot_results] wrote /workspace/media/plots/coverage_by_run.png
+[plot_results] wrote /workspace/media/plots/duration_box.png
+[plot_results] wrote /workspace/media/plots/collisions_bar.png
+[plot_results] wrote /workspace/media/plots/summary_grouped.png
+[plot_results] done — 6 runs, plots in /workspace/media/plots
+[13:40:54] ALL DONE. CSV=/workspace/results/metrics.csv  plots=/workspace/media/plots
