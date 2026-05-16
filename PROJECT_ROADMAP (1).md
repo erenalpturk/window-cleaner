@@ -776,9 +776,9 @@ window-cleaner-robot/
   `media/bags/glass_small_run1`. Kullanıcı Mac'te QuickTime ile kaydedip
   iMovie/DaVinci'de düzenleyecek, `media/demo.mp4`'e koyup yolunu buraya
   not edecek. **Süre/dosya yolu: henüz yok (kullanıcı tamamlayacak).**
-- **Nihai repo commit SHA:** ana commit + `v1.0-submission` tag push
-  edildikten sonra Phase-2/3 konvansiyonuyla küçük bir takip commit'inde
-  (`docs(phase-4): record final commit SHA`) buraya yazılacak.
+- **Nihai repo commit SHA:** `cae34bd` (faz sonu commit; bu satır Phase-2/3
+  konvansiyonuyla küçük bir `docs(phase-4): record final commit SHA` takip
+  commit'inde yazıldı).
 - **Git tag:** `v1.0-submission`
 
 ### Karşılaşılan kritik hatalar ve çözümleri (workflow kuralı 8)
@@ -845,9 +845,8 @@ Mesaj tipi, paket yapısı veya navigasyon mantığı değişmedi.
 
 ### Faz sonu
 
-- **Faz sonu commit:** `feat(phase-4): metrics, benchmark, docs +
-  coverage_planner PolygonStamped fix — Phase 4 complete` (SHA takip
-  commit'inde).
+- **Faz sonu commit:** `cae34bd` — `feat(phase-4): metrics, benchmark,
+  docs + coverage_planner PolygonStamped fix — Phase 4 complete`.
 - **Git tag:** `v1.0-submission`
 - **Açık kalan (kullanıcı):** demo video kaydı/montajı (4.7-4.9) ve
   faz-sonu demo gösterimi — storyboard + rosbag'ler hazır.
