@@ -8,7 +8,7 @@ dev_environment: Docker Desktop + Foxglove Studio (Apple Silicon — XQuartz GLX
 duration: 4 weeks (28 days)
 status: phase_4_complete
 current_phase: 4
-last_updated: 2026-05-16
+last_updated: 2026-05-17
 communication_language: Turkish
 documentation_language: English
 ---
@@ -629,6 +629,8 @@ window-cleaner-robot/
 **Kontrat korunur:** Aynı `/control/mission_state` (WAITING→RUNNING→DONE) ve `/cmd_vel` yayınlanır → perception / cleaning_controller / evaluation katmanları **değişmez**. Eski `path_follower` + `nav2.launch.py` + custom BT repoda **belgelenmiş "gelişmiş/alternatif Nav2 modu"** olarak kalır (silinmez). `docs/RUNNING.md` ve `docs/RUNNING.tr.md` yeni basit akışla güncellenir (aynı commit).
 
 **Rapor savunması:** "Gravity-free planar abstraction + ground-truth odometry için Nav2'nin reaktif yığını gereksiz; deterministik kontrolcü bu soyutlamaya daha uygun ve daha sağlam" — projenin zaten belgelenmiş bilinçli-soyutlama felsefesiyle tutarlı.
+
+**Doğrulama ve commit:** 2026-05-17'de uçtan uca doğrulandı — `coverage_planner` + `waypoint_follower` ile robot tüm boustrophedon zikzağını temiz dön-sür-dön ile sürdü, ölçümle `mission_state RUNNING → DONE`, düz strip'te 4 s'de 0.535 m / dönme yok. 19 coverage_planner unit testi geçiyor, URDF `check_urdf` geçerli. Plan-değişikliği commit SHA: **`c180ffe`** (`feat(phase-3): deterministic waypoint_follower replaces Nav2 for driving (simple+stable)`).
 
 ### Faz 3'ün başarılı kısımları (akademik açıdan rapor edilebilir)
 
