@@ -292,6 +292,12 @@ ve `perception.launch.py`'yi yeniden başlat.
 
 ## Nav2'yi çalıştırma (Faz 3 Sub-phase B+)
 
+> **Sadece gelişmiş/alternatif mod.** Varsayılan kaplama artık Nav2
+> kullanmıyor — aşağıdaki "Kaplama — varsayılan mod"a bak. Bu bölüm
+> yalnızca Nav2 referans akışını bilerek çalıştırırsan geçerlidir. Bu
+> modda sim'i `map_odom_tf:=false` ile başlat ki sim'in statik
+> `map→odom`'u Nav2'nin yayınladığıyla çakışmasın.
+
 Nav2 stack'i statik bir occupancy grid (`maps/glass_basic.pgm`)
 kullanıyor ve `map` frame'i ile global/local costmap'leri yayınlıyor.
 Identity `map → odom` static TF'inin sahibi de o — AMCL kullanılmıyor
@@ -342,7 +348,63 @@ SDF dünyayı düzenledikten sonra haritayı yeniden üret:
 python3 src/window_cleaner_bringup/maps/gen_map.py
 ```
 
-## Planning katmanını çalıştırma (Faz 3 Sub-phase C+)
+## Kaplama — varsayılan mod (deterministik waypoint takipçisi)
+
+**Varsayılan** sürüş kontrolcüsü `waypoint_follower`: aynı
+`/planning/coverage_path`'i tüketen, aynı `/control/mission_state`
+(WAITING → RUNNING → DONE) ve `/cmd_vel`'i yayınlayan deterministik bir
+"dön → sür → dön" node'u. Nav2'yi tamamen baypas eder. Gerekçe: dünya boş,
+gravity-free planar bir soyutlama, odometri ground-truth → Nav2'nin reaktif
+yığını gereksizdi ve path-following instabilitesinin kaynağıydı. Bkz.
+PROJECT_ROADMAP Faz 3 AI Notes (plan değişikliği 2026-05-16). Aşağıdaki
+Nav2 akışı gelişmiş/alternatif mod olarak korunur.
+
+**Üç** terminal gerekir — sim, coverage planner, waypoint follower. Nav2 yok.
+
+**Terminal 1 — Sim:** [§"Sim'i başlat"](#2-simi-başlat) komutunu çalıştır.
+
+**Terminal 2 — Coverage planner:**
+
+```bash
+docker exec -it wc-sim bash
+source install/setup.bash
+ros2 run window_cleaner_planning coverage_planner \
+  --ros-args --params-file /workspace/install/window_cleaner_planning/share/window_cleaner_planning/config/planning_params.yaml
+```
+
+**Terminal 3 — Waypoint follower:**
+
+```bash
+docker exec -it wc-sim bash
+source install/setup.bash
+ros2 run window_cleaner_planning waypoint_follower --ros-args -p use_sim_time:=true
+```
+
+Beklenen: robot her strip'i sürer, her strip geçişinde temiz iki kademeli
+U-dönüşü yapar (dön ~90° → ilerle ~strip arası → dön ~90°);
+`/control/mission_state` WAITING → RUNNING → DONE olur. Cleaning controller
+ve evaluation katmanları öncekiyle birebir aynı şekilde bağlanır (aynı
+kontrat). Rebuild'siz canlı tuning `--ros-args -p` ile: `max_linear_vel`,
+`max_angular_vel`, `turn_threshold`, `position_tolerance`,
+`control_frequency` (varsayılanlar `waypoint_follower.py` içinde).
+
+**Foxglove (basit mod):** `sim.launch.py` artık statik bir `map→odom`
+TF'i yayınlar (`map_odom_tf:=true`, varsayılan), bu yüzden 3D panel
+**Fixed frame'i yine `map`** olabilir. Bu modda Nav2 olmadığı için `/map`
+occupancy grid yok; pencere outline'ı `coverage_planner`'ın yayınladığı
+**`/planning/glass_boundary_viz`** (Path, latched) ile çizilir. 3D
+panelde şu topic'leri aç: `/robot_description`, `/tf`,
+`/planning/glass_boundary_viz` (pencere çerçevesi), `/planning/coverage_path`
+(zikzak). Robot bu ikisinin üstünde hareket etmeli.
+
+---
+
+## Planning katmanını çalıştırma — gelişmiş Nav2 modu (Faz 3 Sub-phase C+)
+
+> **Alternatif/referans mod.** Varsayılan, yukarıdaki deterministik
+> waypoint takipçisidir. Bu Nav2 akışı (custom `RemovePassedGoals` BT +
+> RPP) referans için tutulur; bkz. PROJECT_ROADMAP Faz 3 AI Notes (plan
+> değişikliği 2026-05-16).
 
 Planning katmanında iki node var:
 

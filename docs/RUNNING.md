@@ -275,6 +275,12 @@ Tune detection thresholds without rebuilding by editing
 
 ## Running Nav2 (Phase 3 Sub-phase B+)
 
+> **Advanced/alternative mode only.** Default coverage no longer uses
+> Nav2 — see "Running coverage — default mode" below. This section
+> applies if you deliberately run the Nav2 reference flow. Launch the
+> sim with `map_odom_tf:=false` in this mode so the sim's static
+> `map→odom` does not collide with the one Nav2 publishes.
+
 The Nav2 stack consumes a static occupancy grid (`maps/glass_basic.pgm`)
 and publishes the `map` frame plus the global/local costmaps. It owns
 the identity `map → odom` static TF — no AMCL is used because `/odom`
@@ -324,7 +330,64 @@ Regenerate the map after editing the SDF world:
 python3 src/window_cleaner_bringup/maps/gen_map.py
 ```
 
-## Running the planning layer (Phase 3 Sub-phase C+)
+## Running coverage — default mode (deterministic waypoint follower)
+
+The **default** driving controller is `waypoint_follower`: a deterministic
+turn-then-drive node that consumes the same `/planning/coverage_path` and
+publishes the same `/control/mission_state` (WAITING → RUNNING → DONE) and
+`/cmd_vel`. It bypasses Nav2 entirely. Rationale: the world is an empty,
+gravity-free planar abstraction with ground-truth odometry, so Nav2's
+reactive stack was overkill and the source of path-following instability.
+See PROJECT_ROADMAP Phase 3 AI Notes (plan change 2026-05-16). The Nav2
+flow below is retained as the advanced/alternative mode.
+
+Needs **three** terminals — sim, coverage planner, waypoint follower. No Nav2.
+
+**Terminal 1 — Sim:** run the [§"Launch the sim"](#2-launch-the-sim) command.
+
+**Terminal 2 — Coverage planner:**
+
+```bash
+docker exec -it wc-sim bash
+source install/setup.bash
+ros2 run window_cleaner_planning coverage_planner \
+  --ros-args --params-file /workspace/install/window_cleaner_planning/share/window_cleaner_planning/config/planning_params.yaml
+```
+
+**Terminal 3 — Waypoint follower:**
+
+```bash
+docker exec -it wc-sim bash
+source install/setup.bash
+ros2 run window_cleaner_planning waypoint_follower --ros-args -p use_sim_time:=true
+```
+
+Expected: the robot drives each strip and performs a clean two-stage
+U-turn (turn ~90° → advance ~strip spacing → turn ~90°) at every strip
+transition; `/control/mission_state` goes WAITING → RUNNING → DONE. The
+cleaning controller and evaluation layers attach exactly as before (same
+contract). Tune live without rebuilding via `--ros-args -p`:
+`max_linear_vel`, `max_angular_vel`, `turn_threshold`,
+`position_tolerance`, `control_frequency` (defaults in
+`waypoint_follower.py`).
+
+**Foxglove (simple mode):** `sim.launch.py` now publishes a static
+`map→odom` TF (`map_odom_tf:=true`, default), so the 3D panel **Fixed
+frame can stay `map`**. There is no `/map` OccupancyGrid in this mode
+(no Nav2); the window outline is drawn from `coverage_planner`'s
+**`/planning/glass_boundary_viz`** (latched Path). In the 3D panel enable:
+`/robot_description`, `/tf`, `/planning/glass_boundary_viz` (window
+frame), `/planning/coverage_path` (zigzag). The robot should move over
+both.
+
+---
+
+## Running the planning layer — advanced Nav2 mode (Phase 3 Sub-phase C+)
+
+> **Alternative/reference mode.** The default is the deterministic
+> waypoint follower above. This Nav2 flow (custom `RemovePassedGoals`
+> BT + RPP) is kept for reference; see PROJECT_ROADMAP Phase 3 AI Notes
+> (plan change 2026-05-16).
 
 The planning layer has two nodes:
 

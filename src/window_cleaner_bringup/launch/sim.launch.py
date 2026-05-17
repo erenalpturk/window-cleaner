@@ -53,6 +53,16 @@ def generate_launch_description():
     spawn_y = DeclareLaunchArgument('y', default_value='-1.15')
     spawn_z = DeclareLaunchArgument('z', default_value='0.05')
 
+    # Simple (no-Nav2) mode: publish a static map -> odom TF so the `map`
+    # frame exists for Foxglove (coverage path + glass boundary are in
+    # `map`). Offset equals the spawn x/y because the Ignition DiffDrive
+    # `/odom` is reported relative to the spawn point — identical to what
+    # nav2.launch.py did. Set map_odom_tf:=false when running the advanced
+    # Nav2 mode (nav2.launch.py publishes its own map -> odom).
+    map_odom_tf_arg = DeclareLaunchArgument(
+        'map_odom_tf', default_value='true',
+        description='Publish static map->odom TF (simple no-Nav2 mode)')
+
     gz_resource_path = SetEnvironmentVariable(
         name='IGN_GAZEBO_RESOURCE_PATH',
         value=[PathJoinSubstitution([pkg_worlds, 'worlds']), ':',
@@ -150,10 +160,23 @@ def generate_launch_description():
                    'camera_optical', 'window_cleaner/base_footprint/rgb_camera'],
     )
 
+    # Static map -> odom for the simple no-Nav2 flow (see map_odom_tf_arg).
+    # Translation = spawn x/y so map-frame (world) coords line up with the
+    # spawn-relative DiffDrive odom. Disabled for the advanced Nav2 mode.
+    map_to_odom_static = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='map_to_odom_static',
+        arguments=[LaunchConfiguration('x'), LaunchConfiguration('y'),
+                   '0', '0', '0', '0', 'map', 'odom'],
+        condition=IfCondition(LaunchConfiguration('map_odom_tf')),
+    )
+
     return LaunchDescription([
         world_arg,
         gui_arg, rviz_arg, foxglove_arg,
         spawn_x, spawn_y, spawn_z,
+        map_odom_tf_arg,
         gz_resource_path,
         gz_sim,
         robot_state_publisher,
@@ -161,6 +184,7 @@ def generate_launch_description():
         bridge,
         lidar_tf,
         camera_tf,
+        map_to_odom_static,
         rviz,
         foxglove,
     ])

@@ -614,6 +614,22 @@ window-cleaner-robot/
 4. **Cleaning controller 4-durumlu state machine.** IDLE/MOVING/CLEANING/EMERGENCY. EMERGENCY için 1.0 s hysteresis (flicker önler). State'i `/control/state` topic'ine yayınlar, debug için.
 5. **Engelli dünyada coverage_planner geometric-only.** AABB-tabanlı obstacle filtering var ama yol-planlama yok. Phase 4 raporunda "known limitation, future work" olarak belgelenecek.
 
+### Plan değişikliği (2026-05-16, reteste) — Nav2 sürüş yerine deterministik waypoint takipçisi
+
+**Bağlam:** Phase 4 sonrası reteste path-following sorunları derinlemesine incelendi ve üç ayrı kök neden bulundu:
+
+1. **Nav2 varsayılan BT'sindeki `RemovePassedGoals radius=0.7` > strip arası 0.2875 m.** Her U-dönüşünde dönüş strip'inin yakın köşesi 0.7 m içinde kalıp siliniyordu → robot köşe-keserek strip atlıyordu. (Düzeltme: `window_cleaner_bringup/config/bt/navigate_through_poses_coverage.xml`, `radius=0.15`, `nav2.launch.py` ile bağlandı.)
+2. **`gpu_lidar` collision değil VISUAL görür; robot çevre duvarlarından (0.10 m) uzun.** Lidar dünya-z 0.155'te, duvar tavanı 0.105 → lidar duvarları hiç görmüyor, gördüğü tek şey kendi kamera kutusunun visual'i (~0.11 m tam önde) → kalıcı hayalet engel → RPP "collision ahead → patience exceeded → ABORT" her mission. (Düzeltme: `robot.urdf.xacro` camera_link'ten `<visual>` ve `<collision>` kaldırıldı; sensör + inertia kaldı, lidar self-hit 22/360 → 0/360.)
+3. **RPP `use_rotate_to_heading` + bağlantı waypoint'i yokluğu** → robot U-dönüşünde köşe sürmek yerine ekseninde ~180° spin atıyordu.
+
+**Karar (kullanıcı onaylı):** Bu dünya için Nav2 fazla ağır. Dünya boş, **gravity 0**, dinamik engel yok, kir visual-only, duvarlar statik+bilinen, odometri Ignition DiffDrive'dan **ground-truth**. Sürdüğümüz tüm instabilite Nav2 iç mekaniğinden (costmap/RPP carrot/BT/replanning/collision-check) çıkıyordu, dünyadan değil. Ders ödevi bağlamında **basit ama stabil** mantık tercih edildi.
+
+**Yeni mimari:** `coverage_planner`'ın ürettiği aynı waypoint listesini tüketen, Nav2'yi sürüş için baypas eden deterministik bir node — `window_cleaner_planning/waypoint_follower.py`. Klasik "dön → sür → dön": her waypoint için ground-truth `/odom`'a göre hedefe yerinde dön (heading hatası eşik altına inene dek), sonra düz sür (pozisyon toleransına dek), sıradakine geç; doğrudan `/cmd_vel`. Costmap/carrot/BT/replanning yok → neredeyse hiç arıza modu yok, tam olarak istenen U-dönüş hareketi.
+
+**Kontrat korunur:** Aynı `/control/mission_state` (WAITING→RUNNING→DONE) ve `/cmd_vel` yayınlanır → perception / cleaning_controller / evaluation katmanları **değişmez**. Eski `path_follower` + `nav2.launch.py` + custom BT repoda **belgelenmiş "gelişmiş/alternatif Nav2 modu"** olarak kalır (silinmez). `docs/RUNNING.md` ve `docs/RUNNING.tr.md` yeni basit akışla güncellenir (aynı commit).
+
+**Rapor savunması:** "Gravity-free planar abstraction + ground-truth odometry için Nav2'nin reaktif yığını gereksiz; deterministik kontrolcü bu soyutlamaya daha uygun ve daha sağlam" — projenin zaten belgelenmiş bilinçli-soyutlama felsefesiyle tutarlı.
+
 ### Faz 3'ün başarılı kısımları (akademik açıdan rapor edilebilir)
 
 - ✅ Boustrophedon coverage planner — 18 unit test geçiyor (yoğun waypoint mantığı dahil)

@@ -21,12 +21,14 @@ setup(
     zip_safe=True,
     maintainer='Alp Eren Türk',
     maintainer_email='erenalpturk@gmail.com',
-    description='Planning layer: boustrophedon coverage planner and Nav2 path follower',
+    description='Planning layer: boustrophedon coverage planner, deterministic '
+                'waypoint follower (default), and Nav2 path follower (advanced mode)',
     license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'coverage_planner = window_cleaner_planning.coverage_planner:main',
+            'waypoint_follower = window_cleaner_planning.waypoint_follower:main',
             'path_follower = window_cleaner_planning.path_follower:main',
         ],
     },

@@ -1,0 +1,63 @@
+<!--
+  Custom NavigateThroughPoses behavior tree for the boustrophedon coverage
+  mission. Identical to the Nav2 Humble default
+  (nav2_bt_navigator/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml)
+  EXCEPT for the RemovePassedGoals `radius`.
+
+  Why this fork exists
+  --------------------
+  The coverage path is a dense serpentine: 9 strips spaced 0.2875 m apart
+  (glass y-span 2.30 m / (9-1)), waypoints emitted along each strip. The
+  goal list is ordered strip-by-strip.
+
+  RemovePassedGoals erases the leading run of goals within `radius` of the
+  robot, then ComputePathThroughPoses re-plans through whatever survives.
+  With the upstream default radius=0.7, when the robot reaches the end of a
+  strip its position is only ~0.2875 m from the *near corner of the next
+  return strip* — so the first 1-2 waypoints of every return strip fall
+  inside the 0.7 m window and get deleted before the robot ever visits
+  them. NavFn then plans a diagonal shortcut into the middle of the return
+  strip: the robot corner-cuts every U-turn and drives parallel between
+  strip lines instead of tracking them. (Phase 3 path-following defect,
+  diagnosed 2026-05-16.)
+
+  Fix: radius must be < strip spacing (0.2875 m) so a return strip's near
+  corner is never pruned while the robot is still finishing the previous
+  strip. radius=0.15 keeps a 0.1375 m margin below strip spacing while
+  staying forgiving enough that the robot reliably "passes" each
+  0.50 m-spaced inline waypoint without a stale goal stalling the replan.
+  This is the single changed variable; everything else mirrors upstream.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithReplanning">
+        <RateController hz="0.333">
+          <RecoveryNode number_of_retries="1" name="ComputePathThroughPoses">
+            <ReactiveSequence>
+              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.15"/>
+              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
+            </ReactiveSequence>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </RecoveryNode>
+        </RateController>
+        <RecoveryNode number_of_retries="1" name="FollowPath">
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+        </RecoveryNode>
+      </PipelineSequence>
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <RoundRobin name="RecoveryActions">
+          <Sequence name="ClearingActions">
+            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </Sequence>
+          <Spin spin_dist="1.57"/>
+          <Wait wait_duration="5"/>
+          <BackUp backup_dist="0.30" backup_speed="0.05"/>
+        </RoundRobin>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

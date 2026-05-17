@@ -128,15 +128,22 @@
   <xacro:wheel prefix="rear_right"  x_sign="-1" y_sign="-1"/>
 
   <link name="camera_link">
-    <visual>
-      <origin xyz="0 0 0"/>
-      <geometry><box size="${camera_size} ${camera_size} ${camera_size}"/></geometry>
-      <material name="camera_red"/>
-    </visual>
-    <collision>
-      <origin xyz="0 0 0"/>
-      <geometry><box size="${camera_size} ${camera_size} ${camera_size}"/></geometry>
-    </collision>
+    <!-- No <visual> and no <collision> on purpose.
+         The frame walls are only 0.10 m tall (world z in [0.005, 0.105]),
+         but this robot is taller: with spawn z=0.05 the lidar scan plane
+         sits at world z=0.155, ABOVE the walls, so the 360 gpu_lidar never
+         sees the frame at all. gpu_lidar is GPU-render based -> it detects
+         VISUAL geometry, not collision. The camera housing's visual box
+         spans world z in [0.14, 0.18] and x in [0.11, 0.15] (forward of
+         base centre), i.e. exactly across the lidar plane ~0.11 m dead
+         ahead. The lidar therefore self-detected the camera box as a
+         permanent obstacle and RPP aborted every mission with
+         "collision ahead -> patience exceeded" (removing only <collision>
+         did nothing because gpu_lidar ignores collision). Dropping the
+         visual makes the camera invisible to the lidar render pass; the
+         rgb_camera sensor (attached via <gazebo reference="camera_link">)
+         and the link inertia are unaffected. Real frame avoidance comes
+         from the static map in the global costmap, not this lidar. -->
     <xacro:box_inertia m="${camera_mass}" x="${camera_size}" y="${camera_size}" z="${camera_size}"/>
   </link>
 

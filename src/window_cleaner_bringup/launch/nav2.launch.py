@@ -20,6 +20,13 @@ def generate_launch_description():
     bringup_share = get_package_share_directory('window_cleaner_bringup')
     nav2_params = os.path.join(bringup_share, 'config', 'nav2_params.yaml')
     map_yaml = os.path.join(bringup_share, 'maps', 'glass_basic.yaml')
+    # Custom NavigateThroughPoses BT: the Nav2 default prunes the next return
+    # strip's near corner (RemovePassedGoals radius=0.7 > strip spacing
+    # 0.2875 m), making the robot corner-cut every U-turn. Our fork sets
+    # radius=0.15. Resolved from the install share dir so the path is correct
+    # inside the container regardless of the host workspace location.
+    nav_through_poses_bt = os.path.join(
+        bringup_share, 'config', 'bt', 'navigate_through_poses_coverage.xml')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
@@ -125,7 +132,13 @@ def generate_launch_description():
         executable='bt_navigator',
         name='bt_navigator',
         output='screen',
-        parameters=[params_file],
+        # The dict is applied after params_file, so it overrides the
+        # default_nav_through_poses_bt_xml value (unset in nav2_params.yaml,
+        # which otherwise falls back to the upstream radius=0.7 tree).
+        parameters=[
+            params_file,
+            {'default_nav_through_poses_bt_xml': nav_through_poses_bt},
+        ],
     )
 
     # Delay the lifecycle manager slightly so all servers have advertised

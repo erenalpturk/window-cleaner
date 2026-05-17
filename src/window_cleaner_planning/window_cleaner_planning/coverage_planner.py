@@ -239,6 +239,13 @@ class CoveragePlannerNode(Node):
         self._path_pub = self.create_publisher(
             Path, "/planning/coverage_path", path_qos
         )
+        # Latched visualization of the glass/window rectangle. Without Nav2
+        # there is no /map OccupancyGrid, so this closed-loop Path is what
+        # outlines the "window" in Foxglove 3D. Self-contained in the
+        # planning layer (no Nav2 / map_server).
+        self._boundary_pub = self.create_publisher(
+            Path, "/planning/glass_boundary_viz", path_qos
+        )
 
         self.create_subscription(
             PolygonStamped,
@@ -250,6 +257,7 @@ class CoveragePlannerNode(Node):
         self._waypoints = compute_path(self._params)
         self._path_msg = self._build_path_msg(self._waypoints)
         self._path_pub.publish(self._path_msg)
+        self._boundary_pub.publish(self._build_boundary_msg())
         distinct_ys = len({round(wp[1], 4) for wp in self._waypoints})
         self.get_logger().info(
             f"Published coverage path with {len(self._waypoints)} waypoints "
@@ -261,6 +269,19 @@ class CoveragePlannerNode(Node):
             f"obstacles={len(self._params.obstacles)} "
             f"(inflation={self._params.obstacle_inflation:.2f}m)"
         )
+
+    def _build_boundary_msg(self) -> Path:
+        """Closed-loop Path tracing the glass/window rectangle (4 corners
+        back to start) in the path frame, for Foxglove visualization."""
+        p = self._params
+        corners = [
+            (p.glass_min_x, p.glass_min_y),
+            (p.glass_max_x, p.glass_min_y),
+            (p.glass_max_x, p.glass_max_y),
+            (p.glass_min_x, p.glass_max_y),
+            (p.glass_min_x, p.glass_min_y),  # close the loop
+        ]
+        return self._build_path_msg([(x, y, 0.0) for (x, y) in corners])
 
     def _build_path_msg(self, waypoints: List[Waypoint]) -> Path:
         path = Path()
