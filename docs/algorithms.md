@@ -8,8 +8,9 @@ config YAMLs; this document describes the logic, not a re-derivation.
 `src/window_cleaner_planning/window_cleaner_planning/coverage_planner.py`
 (`compute_path`). Input: the static glass interior bounds (inset by
 `strip_width/2` so strip endpoints clear the walls). Output: a latched
-`nav_msgs/Path` of densely-sampled waypoints, sent to Nav2 as one
-`NavigateThroughPoses` goal.
+`nav_msgs/Path` of densely-sampled waypoints, consumed by the default
+`waypoint_follower` (§4) — or, in the retained Nav2 mode, sent to Nav2 as
+one `NavigateThroughPoses` goal.
 
 ```
 margin   = strip_width / 2
@@ -92,7 +93,37 @@ bright glass-edge false positives and flicker (roadmap AI-Notes Phase 2:
 false-positive = 0 across 5 poses after tuning). Standard messages chosen
 over a custom type (PoseArray + Float32MultiArray).
 
-## 4. Nav2 navigation
+## 4. Driving the coverage path
+
+**Default — deterministic `waypoint_follower`** (plan change 2026-05-16,
+roadmap Phase 3 AI Notes). `waypoint_follower.py` consumes the same latched
+`/planning/coverage_path` and runs a classic turn-then-drive loop on
+ground-truth `/odom`:
+
+```
+for each waypoint:
+    heading_err = atan2(dy, dx) - yaw
+    if |heading_err| > turn_threshold (0.15 rad ≈ 8.6°):
+        rotate in place        # w = clamp(heading_kp · heading_err)
+    else:
+        drive straight         # v = clamp(linear_kp · dist),
+                               # small drive_heading_kp yaw correction
+    advance when within position_tolerance
+publish /control/mission_state WAITING → RUNNING → DONE; → /cmd_vel
+```
+
+No costmap / carrot / behaviour tree / replanning, so there is almost no
+failure mode. Defaults mirror the old Nav2 limits (`max_linear_vel 0.15`,
+`max_angular_vel 1.0`), live-tunable via `--ros-args -p`. Consecutive
+strips share an x endpoint, so each transition is a pure perpendicular hop
+→ the clean two-stage U-turn falls out for free, no connector waypoints.
+Rationale: the gravity-free planar abstraction with ground-truth odometry
+made Nav2's reactive stack overkill and the sole source of path-following
+instability.
+
+**Alternative / reference mode — Nav2.** Retained, not deleted; still
+academically reportable. The benchmark in [results.md](results.md) predates
+the plan change and reflects this Nav2 flow.
 
 Global: **NavFn** on a static occupancy grid (frame walls = occupied;
 `obstacle_layer` removed from the global costmap so the 6 Hz lidar can't

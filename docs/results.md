@@ -1,9 +1,21 @@
 # Results
 
-> **Status: final.** 6-run benchmark executed 2026-05-16 on the user's
-> MacBook Air M4 (Docker / headless Ignition). Tables, plots and analysis
-> below are filled from `results/metrics.csv` (committed) and
-> `media/plots/*.png` (committed).
+> **Status: final for the Nav2 reference flow.** 6-run benchmark executed
+> 2026-05-16 on the user's MacBook Air M4 (Docker / headless Ignition).
+> Tables, plots and analysis below are filled from `results/metrics.csv`
+> (committed) and `media/plots/*.png` (committed).
+>
+> ⚠️ **Honest note — this benchmark predates the driving-controller plan
+> change.** It was run on the **Nav2 reference flow** (`path_follower` +
+> NavFn + Regulated Pure Pursuit). The post-Phase-3 plan change to the
+> deterministic `waypoint_follower` (commit `c180ffe`, 2026-05-17) is
+> *later* than this run, so every number, the `ABORTED` outcomes, and the
+> "Nav2 recovery thrash" abort analysis below describe the **alternative**
+> mode — **not** the current default driver, which has not been
+> re-benchmarked. This is stated explicitly rather than silently
+> re-numbering data. To benchmark the new default, re-run
+> `run_benchmark.sh` with the `waypoint_follower` flow and regenerate this
+> file; see roadmap Phase 3 AI Notes for the plan change.
 
 ## Methodology
 

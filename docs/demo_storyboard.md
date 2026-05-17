@@ -28,7 +28,8 @@ docker compose -f docker/docker-compose.yml run --service-ports --rm \
 # wait for: foxglove_bridge ... listening on 8765
 ```
 Connect Foxglove (`ws://localhost:8765`, **Foxglove WebSocket**), load the
-saved layout, set 3D Fixed frame = `odom` (or `map` after Nav2 is up).
+saved layout. In the default (no-Nav2) mode `sim.launch.py` publishes the
+static `map→odom` TF, so the 3D Fixed frame can stay `map`.
 
 ## Segments (~3:00 total)
 
@@ -37,7 +38,7 @@ saved layout, set 3D Fixed frame = `odom` (or `map` after Nav2 is up).
 | 0:00–0:15 | **Title.** Project name, "ROS 2 + Gazebo, 2-D planar abstraction of a window cleaner", student name. | Title card (editing). |
 | 0:15–0:45 | **Spawn + manual drive.** Robot on the blue glass with brown dirt discs; drive a few metres with the Teleop pad. | Foxglove 3D panel + Teleop panel. `ros2 run teleop_twist_keyboard ...` optional. |
 | 0:45–1:30 | **Perception.** Camera feed; frame boundary (blue) on `/perception/debug_frame`; dirt contours (green) + centres (red) on `/perception/debug_dirt`. | Start `perception.launch.py` (Terminal 3, `docker compose exec wc-sim ...`). Foxglove Image panel cycling the debug topics. |
-| 1:30–2:30 | **Autonomous coverage (≈8× sped up).** Nav2 + planner + path follower + controller; show the boustrophedon `/planning/coverage_path` in 3D, the robot snaking, `/control/state` flipping MOVING↔CLEANING, mission_state WAITING→RUNNING. Be honest: it covers part of the strips and may ABORT — that is the documented result. | Terminals 2/4/5/6 per RUNNING.md (nav2, coverage_planner, path_follower, control). 3D panel: path + costmap + TF; Raw Messages: `/control/mission_state`. |
+| 1:30–2:30 | **Autonomous coverage (≈8× sped up).** Default driver = `coverage_planner` + `waypoint_follower` (no Nav2); show the boustrophedon `/planning/coverage_path` in 3D, the robot snaking with clean two-stage U-turns, `/control/state` flipping MOVING↔CLEANING, mission_state WAITING→RUNNING→DONE. Be honest: coverage is intentionally partial (planner inset + strip gap). | Terminals per RUNNING.md "Running coverage — default mode" (coverage_planner, waypoint_follower) + control. 3D panel: `/planning/coverage_path` + `/planning/glass_boundary_viz` + TF; Raw Messages: `/control/mission_state`. (Nav2 reference flow is the alternative — see RUNNING.md.) |
 | 2:30–3:00 | **Metrics + conclusion.** Show `results/metrics.csv` and the four `media/plots/*.png`; one line on the honest partial-coverage / 2-D-abstraction framing. | `cat results/metrics.csv`; the plot PNGs. Closing card → [known_issues.md](known_issues.md) takeaway. |
 
 ## Optional: record straight from the benchmark

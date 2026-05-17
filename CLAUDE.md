@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Status
 
-This repo currently contains **only** [PROJECT_ROADMAP (1).md](PROJECT_ROADMAP (1).md). There is no code, no `src/`, no Docker setup yet — the project is at **Phase 0** (prerequisites). Do not assume any folder structure described in the roadmap already exists; create it as you progress.
+**Phase 4 complete** (`status: phase_4_complete`, `current_phase: 4` in the roadmap frontmatter). The full codebase exists: `docker/`, all seven `src/window_cleaner_*` packages, `docs/`, `results/`, and `media/plots/`. All phase work (1–4) plus the post-Phase-3 plan change (deterministic `waypoint_follower` replacing Nav2 for driving — see below) is committed. Remaining open items are the manual, user-owned demo video (roadmap tasks 4.7–4.9, see [docs/demo_storyboard.md](docs/demo_storyboard.md)). Always re-check the roadmap frontmatter for the live status.
 
 ## Source of Truth
 
@@ -32,21 +32,21 @@ If you and the user agree on a plan change, **edit the roadmap first**, then imp
 
 **Stack:**
 - ROS2 Humble (Apple Silicon ARM64, via Docker)
-- Gazebo Fortress (official pairing with Humble)
-- Nav2 (navigation, costmap, behavior tree)
+- Gazebo Fortress / Ignition (official pairing with Humble; CLI is `ign gazebo`, not `gz sim`)
+- Deterministic `waypoint_follower` is the **default driving controller** (plan change 2026-05-16, see roadmap Phase 3 AI Notes). Nav2 (NavFn + Regulated Pure Pursuit + custom BT) is **retained as the documented advanced/alternative mode**, not the default.
 - OpenCV 4.x + cv_bridge (Python)
-- Dev environment: Docker Desktop + XQuartz (X11 forwarding) on MacBook Air M4
+- Dev environment: Docker Desktop + **Foxglove Studio** (WebSocket, port 8765) on MacBook Air M4. **XQuartz/X11 and RViz do not work on Apple Silicon** (GLX context cannot be created); Gazebo runs headless and all visualisation is via Foxglove.
 
 **Key architectural decision — defend in the report:** The robot does NOT climb a real vertical wall. The world uses `<gravity>0 0 0</gravity>` and a **2D planar abstraction** of the glass surface. Framed as "vertical-surface kinematics modeled via 2D planar abstraction." This is intentional, not a bug.
 
-**Package layout (to be created under `src/`):**
+**Package layout (all exist under `src/`):**
 - `window_cleaner_description` — URDF/xacro, meshes (`ament_cmake`)
 - `window_cleaner_worlds` — SDF worlds, materials (`ament_cmake`)
-- `window_cleaner_bringup` — launch files, Nav2 config (`ament_cmake`)
+- `window_cleaner_bringup` — launch files, Nav2 config, occupancy maps (`ament_cmake`)
 - `window_cleaner_perception` — camera, frame detector, dirt segmenter (`ament_python`)
-- `window_cleaner_planning` — Boustrophedon coverage planner, path follower (`ament_python`)
+- `window_cleaner_planning` — Boustrophedon coverage planner, `waypoint_follower` (default driver), `path_follower` (Nav2 alternative mode) (`ament_python`)
 - `window_cleaner_control` — vacuum/brush state machine (`ament_python`)
-- `window_cleaner_evaluation` — metrics collection, plotting (`ament_python`)
+- `window_cleaner_evaluation` — metrics collection, benchmark, plotting (`ament_python`)
 
 **Topic contracts between layers (do not break):**
 - Perception publishes: `/perception/glass_boundary` (PolygonStamped), `/perception/dirty_regions` (PoseArray + Float32MultiArray for areas), `/perception/debug_*` (Image)
@@ -73,30 +73,37 @@ cd /workspace && colcon build --symlink-install
 colcon build --packages-select PACKAGE_NAME    # single package
 source install/setup.bash
 
-# Run the full simulation
-ros2 launch window_cleaner_bringup sim.launch.py
+# Run the sim (headless + Foxglove — see docs/RUNNING.md for the full flow)
+ros2 launch window_cleaner_bringup sim.launch.py rviz:=false gui:=false foxglove:=true
 ros2 launch window_cleaner_perception perception.launch.py
+
+# Default autonomous coverage (NO Nav2 — deterministic waypoint follower)
+ros2 run window_cleaner_planning coverage_planner --ros-args --params-file <planning_params.yaml>
+ros2 run window_cleaner_planning waypoint_follower --ros-args -p use_sim_time:=true
+
+# Advanced/alternative Nav2 mode (retained reference flow)
+ros2 launch window_cleaner_bringup nav2.launch.py        # then coverage_planner + path_follower
+
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
-# Debug
+# Debug (visualisation is Foxglove only — RViz/rviz2 cannot run on Apple Silicon)
 ros2 topic list
 ros2 topic hz /topic_name
 ros2 topic echo /topic_name --once
 ros2 node list
-rviz2
 
 # URDF validation
 xacro src/window_cleaner_description/urdf/robot.urdf.xacro > /tmp/robot.urdf
 check_urdf /tmp/robot.urdf
 
-# Standalone Gazebo
-gz sim worlds/glass_basic.sdf
+# Standalone Gazebo (Ignition Fortress — NOT `gz sim`)
+ign gazebo worlds/glass_basic.sdf
 ```
 
-**Host-side X11 setup (re-run after every reboot — consider adding to `.zshrc`):**
-```bash
-xhost +localhost
-```
+Visualisation/teleop is **Foxglove Studio** over WebSocket (`ws://localhost:8765`).
+XQuartz/X11 forwarding is **not** used (GLX is broken on Apple Silicon), so there
+is no `xhost` step. Full bring-up: [docs/RUNNING.md](docs/RUNNING.md) ·
+Türkçe [docs/RUNNING.tr.md](docs/RUNNING.tr.md).
 
 ## Workflow Rules
 

@@ -21,12 +21,13 @@ built phase by phase).
    └──────────────────────────────────────────────────────────────────┘
                            ▼ /perception/glass_boundary
    ┌───────────── Planning (window_cleaner_planning) ─────────────────┐
-   │ coverage_planner : boustrophedon → /planning/coverage_path       │
-   │ path_follower    : Path → Nav2 NavigateThroughPoses;             │
-   │                    publishes /control/mission_state              │
+   │ coverage_planner  : boustrophedon → /planning/coverage_path      │
+   │ waypoint_follower : DEFAULT — deterministic turn-then-drive on    │
+   │   ground-truth /odom → /cmd_vel; publishes /control/mission_state │
+   │ path_follower     : ALT mode — Path → Nav2 NavigateThroughPoses   │
    └──────────────────────────────────────────────────────────────────┘
-                           ▼ action: navigate_through_poses
-   ┌───────────── Nav2 (window_cleaner_bringup) ──────────────────────┐
+              default ▼ /cmd_vel        alt ▼ action: navigate_through_poses
+   ┌───────────── Nav2 (window_cleaner_bringup) — ALT mode only ──────┐
    │ map_server (static occupancy) · NavFn global planner ·           │
    │ Regulated Pure Pursuit local · bt_navigator · lifecycle_manager  │
    │ static TF map→odom (no AMCL: odom is ground truth — see below)   │
@@ -44,6 +45,31 @@ built phase by phase).
    └──────────────────────────────────────────────────────────────────┘
 ```
 
+## Driving controller: default vs. Nav2 (plan change 2026-05-16)
+
+Two interchangeable Planning drivers consume the same
+`/planning/coverage_path` and publish the same `/control/mission_state`
+(WAITING → RUNNING → DONE) + `/cmd_vel`, so Perception, Control and
+Evaluation are identical either way:
+
+* **`waypoint_follower` — default.** Deterministic turn-then-drive: rotate
+  in place toward the next waypoint until the heading error is small, drive
+  straight to the position tolerance, repeat — directly on ground-truth
+  `/odom`, straight to `/cmd_vel`. No costmap, carrot, behaviour tree or
+  replanning. On the gravity-free planar abstraction with ground-truth
+  odometry, Nav2's reactive stack was overkill and the sole source of the
+  observed path-following instability (roadmap Phase 3 AI Notes, plan
+  change). Strip-to-strip transitions are a pure perpendicular hop, so it
+  naturally performs the clean two-stage U-turn.
+* **Nav2 (`path_follower` + `nav2.launch.py` + custom BT) — retained
+  alternative/reference mode.** NavFn global + Regulated Pure Pursuit local
+  over a static occupancy map. The descriptions below and in
+  [algorithms.md](algorithms.md) §4 still apply to this mode; it is kept
+  (not deleted) and is academically reportable.
+
+The benchmark in [results.md](results.md) predates the plan change and
+reflects the Nav2 reference flow (stated honestly there).
+
 ## The 2-D planar abstraction (defended)
 
 A real window cleaner climbs a vertical pane. Simulating climbing dynamics
@@ -55,10 +81,12 @@ differential drive. This is **"vertical-surface kinematics modelled via a
 literature. Consequences, all intentional:
 
 * No AMCL/localisation: Gazebo's DiffDrive plugin makes `/odom` ground
-  truth. Nav2 runs with a **static `map → odom` TF** equal to the spawn
-  offset, so map-frame coordinates equal world coordinates. (`nav2.launch.py`
-  exposes this as additive `odom_offset_x/y` arguments — default
-  `-2.15/-1.15`, overridden per world by the benchmark.)
+  truth. A **static `map → odom` TF** equal to the spawn offset keeps
+  map-frame coordinates equal to world coordinates. In the default mode
+  `sim.launch.py` publishes it (`map_odom_tf:=true`); in the Nav2 mode
+  `nav2.launch.py` owns it instead (launch sim with `map_odom_tf:=false`),
+  exposed as additive `odom_offset_x/y` arguments — default `-2.15/-1.15`,
+  overridden per world by the benchmark.
 * Zero friction: linear motion slightly overshoots commanded distance
   (documented in roadmap AI-Notes Phase 1). Velocities are kept low
   (`0.15 m/s`).
@@ -79,8 +107,8 @@ literature. Consequences, all intentional:
 | `/perception/dirty_areas` | `std_msgs/Float32MultiArray` | dirt_segmenter |
 | `/perception/debug_*` | `sensor_msgs/Image` | perception → Foxglove |
 | `/planning/coverage_path` | `nav_msgs/Path` (TRANSIENT_LOCAL) | coverage_planner → path_follower |
-| `navigate_through_poses` | `nav2_msgs/action/NavigateThroughPoses` | path_follower → Nav2 |
-| `/control/mission_state` | `std_msgs/String` (VOLATILE, 1 Hz re-pub) | path_follower → control, metrics |
+| `navigate_through_poses` | `nav2_msgs/action/NavigateThroughPoses` | path_follower → Nav2 (alt mode only) |
+| `/control/mission_state` | `std_msgs/String` (VOLATILE, 1 Hz re-pub) | waypoint_follower (default) / path_follower (Nav2 mode) → control, metrics |
 | `/control/state` | `std_msgs/String` | cleaning_controller (debug) |
 | `/control/vacuum_cmd`, `/control/brush_cmd` | `std_msgs/Bool` | cleaning_controller |
 | `/cmd_vel` | `geometry_msgs/Twist` | Nav2 / control → Gazebo |

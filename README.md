@@ -26,16 +26,27 @@ Gazebo (Ignition, headless)
 Perception      frame_detector → /perception/glass_boundary
                 dirt_segmenter → /perception/dirty_regions
   ▼
-Planning        coverage_planner → /planning/coverage_path (boustrophedon)
-                path_follower    → Nav2 NavigateThroughPoses
-  ▼
-Nav2            NavFn (global) + Regulated Pure Pursuit (local)
+Planning        coverage_planner  → /planning/coverage_path (boustrophedon)
+                waypoint_follower → /cmd_vel  (DEFAULT: deterministic
+                                    turn-then-drive, no Nav2)
+  ▼  (alternative/reference mode, retained:
+      path_follower → Nav2 NavFn + Regulated Pure Pursuit)
   ▼
 Control         cleaning_controller → /control/{vacuum,brush}_cmd
                 IDLE / MOVING / CLEANING / EMERGENCY
   ▼
 Evaluation      metrics_node → results/metrics.csv (Phase 4)
 ```
+
+> **Driving controller (plan change 2026-05-16).** The default driver is the
+> deterministic `waypoint_follower` (turn-then-drive on ground-truth `/odom`,
+> straight to `/cmd_vel`, no Nav2). The gravity-free planar abstraction with
+> ground-truth odometry made Nav2's reactive stack overkill and the source of
+> path-following instability. The Nav2 flow (`path_follower` + `nav2.launch.py`
+> + custom BT) is **kept as the documented advanced/alternative mode**. Both
+> publish the same `/control/mission_state` + `/cmd_vel` contract, so
+> perception / control / evaluation are unchanged. Rationale: roadmap Phase 3
+> AI Notes.
 
 Full layer diagram and the topic-contract table:
 [docs/architecture.md](docs/architecture.md). Algorithms (boustrophedon,
@@ -95,15 +106,22 @@ PROJECT_ROADMAP (1).md          single source of truth (phase tracking)
 ## Results summary
 
 6-run benchmark over the two working worlds. Coverage is intentionally
-**partial** (the frozen Phase-3 navigation covers ~4–6 of 9 strips on the
-basic world); ABORTED/TIMEOUT runs are recorded honestly. Full table,
-plots and analysis: [docs/results.md](docs/results.md).
+**partial**; ABORTED/TIMEOUT runs are recorded honestly, not hidden.
+
+> **Honest note:** the committed 6-run benchmark (2026-05-16) was executed on
+> the **Nav2 reference flow**, *before* the `waypoint_follower` plan change
+> (commit `c180ffe`, 2026-05-17). The numbers and the "Nav2 recovery thrash"
+> abort analysis therefore describe the alternative mode, not the current
+> default driver, which has not been re-benchmarked. Stated explicitly rather
+> than silently re-numbered. Full table, plots and analysis:
+> [docs/results.md](docs/results.md).
 
 ## Known limitations
 
-Carried over from Phase 3 and documented, not hidden — honest limitations
-earn academic credit. Obstacle-world navigation, U-turn overshoot, low M4
-RTF, lidar height. See [docs/known_issues.md](docs/known_issues.md).
+Documented, not hidden — honest limitations earn academic credit.
+Obstacle-world navigation, U-turn overshoot, low M4 RTF, lidar height. The
+U-turn/Nav2-recovery items are specific to the Nav2 reference flow (see the
+honest note above). See [docs/known_issues.md](docs/known_issues.md).
 
 ## License
 

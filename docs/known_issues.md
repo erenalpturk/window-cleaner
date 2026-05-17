@@ -7,6 +7,17 @@ Phase 4: the Phase-4 instruction is *"be conservative, only add metric
 collection and world variants"*, so the Phase-3 navigation/control code is
 frozen and these are **measured and reported**, not patched.
 
+> **Scope note (plan change 2026-05-16).** Items that name Nav2 internals
+> — §1 "Nav2 recovery thrash", §2 "Regulated Pure Pursuit reports collision
+> ahead", and the controller-frequency framing of §3 — describe the **Nav2
+> reference flow**, which is the mode the committed benchmark
+> ([results.md](results.md)) was run on. The current **default** driver is
+> the deterministic `waypoint_follower` (no costmap/RPP/BT). Its behaviour
+> has not been re-benchmarked, so these limitations are reported as-measured
+> for the Nav2 mode and **not** re-characterised for the default driver
+> here (no data is invented). The 2-D-abstraction, RTF and sensor items
+> (§4–§8) are mode-independent and still apply.
+
 ## Navigation / coverage
 
 1. **Partial coverage on the basic world.** The frozen Phase-3 stack covers
