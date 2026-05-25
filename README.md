@@ -9,12 +9,11 @@ Apple Silicon (MacBook Air M4).
 > wall. The world uses `<gravity>0 0 0</gravity>` and a **2-D planar
 > abstraction** of the glass — *"vertical-surface kinematics modelled via
 > 2-D planar abstraction."* This is intentional and defended in the report;
-> see [docs/architecture.md](docs/architecture.md) and
-> [docs/known_issues.md](docs/known_issues.md).
+> see [docs/TECHNICAL.md](docs/TECHNICAL.md).
 
 ## Demo
 
-Screen-recorded per [docs/demo_storyboard.md](docs/demo_storyboard.md)
+Screen-recorded per [docs/RESULTS.md §2](docs/RESULTS.md#2-demo-video-plan)
 (shot list). Place the final clip at `media/demo.mp4`.
 
 ## Architecture
@@ -48,9 +47,9 @@ Evaluation      metrics_node → results/metrics.csv (Phase 4)
 > perception / control / evaluation are unchanged. Rationale: roadmap Phase 3
 > AI Notes.
 
-Full layer diagram and the topic-contract table:
-[docs/architecture.md](docs/architecture.md). Algorithms (boustrophedon,
-OpenCV pipelines, coverage metric): [docs/algorithms.md](docs/algorithms.md).
+Full layer diagram, topic-contract table, algorithms (boustrophedon,
+OpenCV pipelines, coverage metric) and the honest known-issues catalogue:
+[docs/TECHNICAL.md](docs/TECHNICAL.md).
 
 ## Quick start
 
@@ -70,7 +69,7 @@ docker compose -f docker/docker-compose.yml run --service-ports --rm \
 Visualisation is via **Foxglove Studio** (WebSocket, port 8765) — XQuartz
 GLX is broken on Apple Silicon so Gazebo runs headless and RViz is
 unavailable. Bring-up details:
-[docs/RUNNING.md](docs/RUNNING.md) · Türkçe: [docs/RUNNING.tr.md](docs/RUNNING.tr.md).
+[docs/RUNNING.md](docs/RUNNING.md).
 
 ### Benchmark (Phase 4)
 
@@ -82,7 +81,7 @@ docker compose -f docker/docker-compose.yml run --service-ports --rm \
 ```
 
 6 unattended runs (`glass_basic` + `glass_small` × 3) → `results/metrics.csv`
-→ `media/plots/`. Results & analysis: [docs/results.md](docs/results.md).
+→ `media/plots/`. Results & analysis: [docs/RESULTS.md](docs/RESULTS.md).
 
 ## Folder structure
 
@@ -96,11 +95,12 @@ src/
   window_cleaner_planning/       boustrophedon planner, path follower
   window_cleaner_control/        vacuum / brush state machine
   window_cleaner_evaluation/     metrics_node, benchmark, plotting (Phase 4)
-docs/                           RUNNING(.tr), architecture, algorithms,
-                                results, known_issues, demo_storyboard
+docs/                           RUNNING (bring-up), TECHNICAL
+                                (architecture + algorithms + known issues),
+                                RESULTS (benchmark + demo plan)
 results/                        metrics.csv (benchmark output)
 media/                          plots/, bags/, demo video
-PROJECT_ROADMAP (1).md          single source of truth (phase tracking)
+PROJECT_ROADMAP.md              single source of truth (phase tracking)
 ```
 
 ## Results summary
@@ -114,14 +114,14 @@ PROJECT_ROADMAP (1).md          single source of truth (phase tracking)
 > abort analysis therefore describe the alternative mode, not the current
 > default driver, which has not been re-benchmarked. Stated explicitly rather
 > than silently re-numbered. Full table, plots and analysis:
-> [docs/results.md](docs/results.md).
+> [docs/RESULTS.md](docs/RESULTS.md).
 
 ## Known limitations
 
 Documented, not hidden — honest limitations earn academic credit.
 Obstacle-world navigation, U-turn overshoot, low M4 RTF, lidar height. The
 U-turn/Nav2-recovery items are specific to the Nav2 reference flow (see the
-honest note above). See [docs/known_issues.md](docs/known_issues.md).
+honest note above). See [docs/TECHNICAL.md §3](docs/TECHNICAL.md#3-known-issues--limitations).
 
 ## License
 

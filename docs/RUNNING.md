@@ -3,12 +3,54 @@
 How to bring the autonomous window-cleaning robot simulation up and down after
 the initial Phase 1 setup is complete.
 
-> Türkçe sürümü: [RUNNING.tr.md](RUNNING.tr.md). Bu dosyayı her güncellediğinde
-> Türkçe çevirisini de aynı commit'te güncelle.
->
 > **Keep this document in sync** with `docker/`, `src/window_cleaner_bringup/launch/`,
 > port mappings, env vars, and any external-tool requirements. If you change
 > how the sim is launched, update this file in the same commit.
+
+## Quick start (TL;DR)
+
+The full bring-up below has the explanations; this is just the commands.
+
+> The default driving mode uses the deterministic `waypoint_follower`
+> (no Nav2). Nav2 is retained in this document as the advanced /
+> alternative reference mode at the end — see "Planning layer — advanced
+> Nav2 mode" below.
+
+```bash
+# One-time
+open -a Docker
+cd /Users/erenalpturk/Projects/Robotic
+docker compose -f docker/docker-compose.yml build
+
+# Terminal 1 — sim (headless + Foxglove bridge on ws://localhost:8765)
+docker compose -f docker/docker-compose.yml run --service-ports --rm \
+  --name wc-sim ros2-dev \
+  bash -c "source install/setup.bash && \
+    ros2 launch window_cleaner_bringup sim.launch.py \
+      rviz:=false gui:=false foxglove:=true"
+
+# Terminal 2 — coverage planner (publishes /planning/coverage_path)
+docker exec -it wc-sim bash -c "source install/setup.bash && \
+  ros2 run window_cleaner_planning coverage_planner --ros-args \
+    --params-file /workspace/install/window_cleaner_planning/share/window_cleaner_planning/config/planning_params.yaml"
+
+# Terminal 3 — default driver (deterministic waypoint follower)
+docker exec -it wc-sim bash -c "source install/setup.bash && \
+  ros2 run window_cleaner_planning waypoint_follower \
+    --ros-args -p use_sim_time:=true"
+
+# Optional terminals
+docker exec -it wc-sim bash -c "source install/setup.bash && \
+  ros2 launch window_cleaner_perception perception.launch.py"   # perception
+docker exec -it wc-sim bash -c "source install/setup.bash && \
+  ros2 launch window_cleaner_control control.launch.py"         # cleaning ctl
+
+# Shutdown
+docker stop wc-sim
+```
+
+Connect Foxglove Studio → **Open Connection** → **Foxglove WebSocket** →
+`ws://localhost:8765`. First-time panel layout: see §4 below.
 
 ## Prerequisites (one-time)
 

@@ -911,7 +911,7 @@ kalibrelidir.
 - [ ] Git commit + push completed
 - [ ] User has been shown the end-of-phase demo (screen recording/photo)
 - [ ] Frontmatter `current_phase` and `last_updated` updated
-- [ ] Known issues recorded in `docs/known_issues.md`
+- [ ] Known issues recorded in `docs/TECHNICAL.md` §3
 
 ---
 
