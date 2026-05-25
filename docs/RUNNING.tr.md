@@ -25,7 +25,7 @@ kullanıyor.
 İlk seferlik image build:
 
 ```bash
-cd /Users/erenalpturk/Desktop/Projects/Robotic
+cd /Users/erenalpturk/Projects/Robotic
 docker compose -f docker/docker-compose.yml build
 ```
 
@@ -45,7 +45,7 @@ Menü çubuğundaki balina ikonunun animasyonu durana kadar bekle.
 ### 2. Sim'i başlat
 
 ```bash
-cd /Users/erenalpturk/Desktop/Projects/Robotic
+cd /Users/erenalpturk/Projects/Robotic
 
 docker compose -f docker/docker-compose.yml run \
   --service-ports --rm --name wc-sim ros2-dev \

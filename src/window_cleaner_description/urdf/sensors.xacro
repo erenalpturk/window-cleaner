@@ -8,7 +8,13 @@
       <left_joint>rear_left_wheel_joint</left_joint>
       <right_joint>front_right_wheel_joint</right_joint>
       <right_joint>rear_right_wheel_joint</right_joint>
-      <wheel_separation>0.32</wheel_separation>
+      <!-- Effective wheel_separation calibrated from skid-steer slip.
+           Geometric track is 0.32 m, but with 4 wheels (front+rear pair on
+           each side) the robot scrubs sideways when turning and encoders
+           over-report yaw. Measured ratio plugin_yaw / ground_truth_yaw
+           = 1.338 (180.3 vs 134.8 deg on a commanded U-turn), so the
+           effective separation matching real omega is 0.32 * 1.338. -->
+      <wheel_separation>0.428</wheel_separation>
       <wheel_radius>0.04</wheel_radius>
       <topic>cmd_vel</topic>
       <odom_topic>odom</odom_topic>

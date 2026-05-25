@@ -29,6 +29,7 @@ setup(
             'camera_node = window_cleaner_perception.camera_node:main',
             'frame_detector = window_cleaner_perception.frame_detector:main',
             'dirt_segmenter = window_cleaner_perception.dirt_segmenter:main',
+            'glass_surface_marker = window_cleaner_perception.glass_surface_marker:main',
         ],
     },
 )

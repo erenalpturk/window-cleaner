@@ -4,6 +4,7 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -39,6 +40,11 @@ def generate_launch_description():
         default_value='true',
         description='Start foxglove_bridge on ws://0.0.0.0:8765',
     )
+    glass_marker_arg = DeclareLaunchArgument(
+        'glass_marker',
+        default_value='true',
+        description='Publish /perception/glass_surface_marker for Foxglove 3D',
+    )
 
     # Spawn at the SW corner so the boustrophedon plan's first waypoint
     # (-2.15, -1.15 in map frame, after coverage_planner's strip_width/2
@@ -69,7 +75,8 @@ def generate_launch_description():
                PathJoinSubstitution([pkg_worlds])]
     )
 
-    robot_description = {'robot_description': Command(['xacro ', xacro_path])}
+    robot_description = {'robot_description': ParameterValue(
+        Command(['xacro ', xacro_path]), value_type=str)}
 
     gz_args = PythonExpression([
         "'", LaunchConfiguration('world'), " -r -v 3",
@@ -160,6 +167,15 @@ def generate_launch_description():
                    'camera_optical', 'window_cleaner/base_footprint/rgb_camera'],
     )
 
+    glass_marker = Node(
+        package='window_cleaner_perception',
+        executable='glass_surface_marker',
+        name='glass_surface_marker',
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('glass_marker')),
+        parameters=[{'use_sim_time': True}],
+    )
+
     # Static map -> odom for the simple no-Nav2 flow (see map_odom_tf_arg).
     # Translation = spawn x/y so map-frame (world) coords line up with the
     # spawn-relative DiffDrive odom. Disabled for the advanced Nav2 mode.
@@ -174,7 +190,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         world_arg,
-        gui_arg, rviz_arg, foxglove_arg,
+        gui_arg, rviz_arg, foxglove_arg, glass_marker_arg,
         spawn_x, spawn_y, spawn_z,
         map_odom_tf_arg,
         gz_resource_path,
@@ -187,4 +203,5 @@ def generate_launch_description():
         map_to_odom_static,
         rviz,
         foxglove,
+        glass_marker,
     ])

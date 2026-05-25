@@ -2,6 +2,13 @@
 build/
 install/
 log/
+# iCloud-Drive workaround: real dirs live under .nosync siblings,
+# install/build/log are symlinks to them so iCloud will not sync
+# build artifacts (which otherwise produce "X 2" duplicate files
+# that break colcon + Docker bind mounts).
+build.nosync/
+install.nosync/
+log.nosync/
 
 # Python
 __pycache__/

@@ -8,7 +8,7 @@ dev_environment: Docker Desktop + Foxglove Studio (Apple Silicon — XQuartz GLX
 duration: 4 weeks (28 days)
 status: phase_4_complete
 current_phase: 4
-last_updated: 2026-05-17
+last_updated: 2026-05-25
 communication_language: Turkish
 documentation_language: English
 ---
@@ -860,6 +860,37 @@ Mesaj tipi, paket yapısı veya navigasyon mantığı değişmedi.
    diski ile gerçek 5×3 / 2×1 yüzey üzerinden ölçülüyor. `DONE` =
    *planlanan yol* bitti demek, tüm cam süpürüldü demek değil. Sayı
    şişirilmedi — roadmap'in dürüstlük duruşuyla bilinçli uyumlu.
+
+### Post-faz-4 düzeltmeleri (2026-05-25)
+
+Demo videosu kayıt seansında Foxglove'da fark edilen problem: `image_raw`
+paneli ve 3D paneli **U-dönüşlerinde senkron olmuyordu** — image ~150°
+döndüğü hâlde 3D panelde robot tam 180° dönmüş görünüyordu. Her dönüşte
+fark birikiyor, kalıcı oluyordu.
+
+**Kök neden:** Robot 4 tekerlekli (URDF), ama DiffDrive plugin sol-sağ
+tekerlek çiftlerini bağlayıp **4-wheel skid-steer** olarak sürüyor.
+Skid-steer'da dönüş sırasında tekerlekler yana kayar, encoder'lar yaw'ı
+olduğundan fazla okur. Ölçüm: `plugin_yaw / ground_truth_yaw = 180.3° /
+134.8° = 1.338`. Yani plugin'in `/odom`'u yanlıştı, image gerçek
+(kayan) pozdan render ediliyordu.
+
+| # | Hata | Düzeltme |
+|---|------|----------|
+| 1 | DiffDrive plugin yaw'ı her U-dönüşünde ~45° drift ediyor (skid-steer slip) | `sensors.xacro` `wheel_separation` 0.32 → **0.428** (= 0.32 × 1.338). Doğrulama sonrası plugin yaw ↔ ground-truth yaw farkı **0.2°**. |
+| 2 | `sim.launch.py` aniden `Unable to parse the value of parameter robot_description as yaml` veriyordu | İki ayrı problem zincirleme: (a) `sensors.xacro` yorumlarında iki nokta (`:`) içeren bir cümle vardı, `Command(xacro)` çıktısı param sisteminde YAML olarak ayrıştırıldığı için patlıyordu. (b) Asıl yapısal düzeltme: `Command([...])` çağrısı `ParameterValue(..., value_type=str)` ile sarıldı — bu sarmalama olduğu sürece URDF yorumlarındaki iki nokta artık güvenli. |
+
+**Ölçüm protokolü** (gelecek kalibrasyonlar için):
+
+```bash
+ros2 topic echo /odom --once | grep -A 4 orientation  # plugin yaw
+ign model -m window_cleaner --pose                    # ground-truth yaw
+```
+
+Robot durağan U-dönüşü sonrası iki quaternion karşılaştırılır. Fark
+>5° ise `wheel_separation` yeniden ayarlanır. Mevcut 0.428 değeri
+`max_angular_vel: 1.0 rad/s` (waypoint_follower default) için
+kalibrelidir.
 
 ### Faz sonu
 

@@ -12,14 +12,14 @@ Sadece komutlar. Detay, panel ayarları ve sorun giderme için:
 
 ```bash
 open -a Docker
-cd /Users/erenalpturk/Desktop/Projects/Robotic
+cd /Users/erenalpturk/Projects/Robotic
 docker compose -f docker/docker-compose.yml build
 ```
 
 ## 1. Sim'i başlat (Terminal 1)
 
 ```bash
-cd /Users/erenalpturk/Desktop/Projects/Robotic
+cd /Users/erenalpturk/Projects/Robotic
 docker compose -f docker/docker-compose.yml run \
   --service-ports --rm --name wc-sim ros2-dev \
   bash -c "source install/setup.bash && \

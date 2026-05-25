@@ -24,7 +24,7 @@ GLX context for OGRE2 / RViz, so the project uses Foxglove WebSocket instead.
 First-time-only image build:
 
 ```bash
-cd /Users/erenalpturk/Desktop/Projects/Robotic
+cd /Users/erenalpturk/Projects/Robotic
 docker compose -f docker/docker-compose.yml build
 ```
 
@@ -43,7 +43,7 @@ Wait until the menu-bar whale icon stops animating.
 ### 2. Launch the sim
 
 ```bash
-cd /Users/erenalpturk/Desktop/Projects/Robotic
+cd /Users/erenalpturk/Projects/Robotic
 
 docker compose -f docker/docker-compose.yml run \
   --service-ports --rm --name wc-sim ros2-dev \
