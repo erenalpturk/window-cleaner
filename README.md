@@ -17,6 +17,8 @@ Foxglove.*
 [![Foxglove](https://img.shields.io/badge/Foxglove-Studio-1A1A2E?style=for-the-badge)](https://foxglove.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 
+**🌐 English** · [Türkçe](README.tr.md)
+
 <!-- HERO IMAGE — replace with a Foxglove 3D screenshot of the robot mid-coverage. -->
 <!-- Save to: media/screenshots/foxglove_hero.png  (path is already referenced). -->
 
